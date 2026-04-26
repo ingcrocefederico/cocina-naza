@@ -102,8 +102,8 @@ export default function Pedidos() {
           {calc?.financials && (
             <>
               <span>Costo: <strong className="text-foreground">${calc.financials.totalCost.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</strong></span>
-              <span>Gan.: <strong className={totalVenta - calc.financials.totalCost >= 0 ? 'text-green-500' : 'text-destructive'}>
-                ${(totalVenta - calc.financials.totalCost).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+              <span>Gan.: <strong className={calc.financials.profit >= 0 ? 'text-green-500' : 'text-destructive'}>
+                ${calc.financials.profit.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </strong></span>
             </>
           )}
