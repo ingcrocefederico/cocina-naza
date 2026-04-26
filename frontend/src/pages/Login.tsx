@@ -14,13 +14,20 @@ export default function Login() {
   if (isLoading) return null
 
   return (
-    <div className="flex h-screen items-center justify-center bg-slate-50">
-      <div className="text-center space-y-6">
-        <div className="text-5xl">🍞</div>
-        <h1 className="text-2xl font-bold text-slate-800">Cocina Naza</h1>
-        <p className="text-slate-500">Gestión de pedidos</p>
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="text-center space-y-6 px-8">
+        <div
+          className="text-7xl font-bold text-primary leading-none"
+          style={{ fontFamily: "'Amatic SC', cursive" }}
+        >
+          Cocina Naza
+        </div>
+        <p className="text-muted-foreground text-sm tracking-wider uppercase">
+          Gestión de pedidos
+        </p>
         <Button
           size="lg"
+          className="w-full max-w-xs cursor-pointer"
           onClick={() => { window.location.href = '/api/auth/google' }}
         >
           Entrar con Google

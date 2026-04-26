@@ -16,7 +16,7 @@ export default function Ingredientes() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-slate-800">Ingredientes</h1>
+      <h1 className="text-xl font-bold text-foreground">Ingredientes</h1>
       <Tabs defaultValue="calculadora">
         <TabsList>
           <TabsTrigger value="calculadora">Calculadora</TabsTrigger>
@@ -39,23 +39,23 @@ function CalculadoraTab({ date, onDateChange }: { date: string; onDateChange: (d
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-slate-600">Fecha:</span>
+        <span className="text-sm text-muted-foreground">Fecha:</span>
         <Input type="date" value={date} onChange={e => onDateChange(e.target.value)} className="w-40" />
       </div>
 
-      {isLoading && <div className="text-slate-500">Calculando...</div>}
+      {isLoading && <div className="text-muted-foreground">Calculando...</div>}
 
       {data && (
         <>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Costo total', value: data.financials.totalCost, color: 'text-red-600' },
-              { label: 'Venta total', value: data.financials.totalSales, color: 'text-blue-600' },
-              { label: 'Ganancia', value: data.financials.profit, color: data.financials.profit >= 0 ? 'text-green-600' : 'text-red-600' },
+              { label: 'Costo total', value: data.financials.totalCost, color: 'text-red-400' },
+              { label: 'Venta total', value: data.financials.totalSales, color: 'text-sky-400' },
+              { label: 'Ganancia', value: data.financials.profit, color: data.financials.profit >= 0 ? 'text-emerald-400' : 'text-red-400' },
             ].map(({ label, value, color }) => (
               <Card key={label}>
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">{label}</p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
                   <p className={`text-lg font-bold ${color}`}>
                     ${value.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                   </p>
@@ -81,7 +81,7 @@ function CalculadoraTab({ date, onDateChange }: { date: string; onDateChange: (d
                       <TableRow key={t.id}>
                         <TableCell>{t.name}</TableCell>
                         <TableCell>{t.totalQuantity.toLocaleString('es-AR')} {t.unit}</TableCell>
-                        <TableCell className="text-slate-600">
+                        <TableCell className="text-muted-foreground">
                           ${t.totalCost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                         </TableCell>
                       </TableRow>
@@ -94,12 +94,12 @@ function CalculadoraTab({ date, onDateChange }: { date: string; onDateChange: (d
 
           {data.byFlavor.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-slate-700">Desglose por sabor</h2>
+              <h2 className="text-sm font-semibold text-foreground">Desglose por sabor</h2>
               {data.byFlavor.map(flavor => (
                 <Card key={flavor.flavorId}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">
-                      {flavor.flavorName} <span className="font-normal text-slate-500">×{flavor.budinCount}</span>
+                      {flavor.flavorName} <span className="font-normal text-muted-foreground">×{flavor.budinCount}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -120,7 +120,7 @@ function CalculadoraTab({ date, onDateChange }: { date: string; onDateChange: (d
           )}
 
           {data.totals.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-muted-foreground">
               Sin datos para esta fecha. Asegurate de tener recetas cargadas.
             </div>
           )}
@@ -141,10 +141,10 @@ function PreciosTab() {
     updateIngredient.mutate({ id: ingredient.id, price_per_unit: newPrice as unknown as string })
   }
 
-  if (isLoading) return <div className="text-slate-500">Cargando...</div>
+  if (isLoading) return <div className="text-muted-foreground">Cargando...</div>
 
   if (ingredients.length === 0) {
-    return <div className="text-center py-12 text-slate-400">Sin ingredientes cargados. Se cargan desde las recetas.</div>
+    return <div className="text-center py-12 text-muted-foreground">Sin ingredientes cargados. Se cargan desde las recetas.</div>
   }
 
   return (

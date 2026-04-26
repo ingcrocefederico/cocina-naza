@@ -49,3 +49,43 @@ flavorsRouter.delete('/:id', async (req, res) => {
   await query('UPDATE flavors SET active = false WHERE id = $1', [req.params.id])
   res.json({ ok: true })
 })
+
+flavorsRouter.get('/:id/recipe', async (req, res) => {
+  const result = await query<{
+    id: string
+    ingredient_id: string
+    ingredient_name: string
+    unit: string
+    quantity_per_budin: number
+  }>(
+    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ri.quantity_per_budin
+     FROM recipe_items ri
+     JOIN ingredients i ON i.id = ri.ingredient_id
+     WHERE ri.flavor_id = $1
+     ORDER BY i.name`,
+    [req.params.id]
+  )
+  res.json(result.rows)
+})
+
+flavorsRouter.put('/:id/recipe', async (req, res) => {
+  const items = req.body as { ingredient_id: string; quantity_per_budin: number }[]
+  await query('DELETE FROM recipe_items WHERE flavor_id = $1', [req.params.id])
+  if (items.length > 0) {
+    const values = items.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
+    const params = items.flatMap(item => [req.params.id, item.ingredient_id, item.quantity_per_budin])
+    await query(
+      `INSERT INTO recipe_items (flavor_id, ingredient_id, quantity_per_budin) VALUES ${values}`,
+      params
+    )
+  }
+  const result = await query(
+    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ri.quantity_per_budin
+     FROM recipe_items ri
+     JOIN ingredients i ON i.id = ri.ingredient_id
+     WHERE ri.flavor_id = $1
+     ORDER BY i.name`,
+    [req.params.id]
+  )
+  res.json(result.rows)
+})

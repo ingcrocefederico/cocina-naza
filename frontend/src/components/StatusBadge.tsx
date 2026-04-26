@@ -1,10 +1,10 @@
 import type { OrderStatus } from '../types'
 
 const config: Record<OrderStatus, { label: string; className: string }> = {
-  pedido:    { label: 'Pedido',    className: 'bg-slate-100 text-slate-700' },
-  preparado: { label: 'Preparado', className: 'bg-yellow-100 text-yellow-800' },
-  entregado: { label: 'Entregado', className: 'bg-blue-100 text-blue-800' },
-  cobrado:   { label: 'Cobrado',   className: 'bg-green-100 text-green-800' },
+  pedido:    { label: 'Pedido',    className: 'bg-stone-700/50 text-stone-300 border border-stone-600/40' },
+  preparado: { label: 'Preparado', className: 'bg-amber-900/50 text-amber-300 border border-amber-700/40' },
+  entregado: { label: 'Entregado', className: 'bg-sky-900/50 text-sky-300 border border-sky-700/40' },
+  cobrado:   { label: 'Cobrado',   className: 'bg-emerald-900/50 text-emerald-300 border border-emerald-700/40' },
 }
 
 export default function StatusBadge({ status }: { status: OrderStatus }) {

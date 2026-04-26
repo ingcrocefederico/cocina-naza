@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
@@ -74,7 +74,7 @@ export default function PedidoForm() {
   })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
-  const watchedItems = watch('items')
+  const watchedItems = useWatch({ control, name: 'items' })
 
   useEffect(() => {
     if (existingOrder) {
@@ -120,7 +120,7 @@ export default function PedidoForm() {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-xl font-bold text-slate-800">{isEdit ? 'Editar pedido' : 'Nuevo pedido'}</h1>
+        <h1 className="text-xl font-bold text-foreground">{isEdit ? 'Editar pedido' : 'Nuevo pedido'}</h1>
       </div>
 
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -128,7 +128,7 @@ export default function PedidoForm() {
         <div>
           <Label>Nombre del cliente *</Label>
           <Input {...register('client_name')} placeholder="María González" />
-          {errors.client_name && <p className="text-red-500 text-xs mt-1">{errors.client_name.message}</p>}
+          {errors.client_name && <p className="text-destructive text-xs mt-1">{errors.client_name.message}</p>}
         </div>
 
         <div>
@@ -169,8 +169,8 @@ export default function PedidoForm() {
                 name={`items.${idx}.flavor_id`}
                 render={({ field: f }) => (
                   <Select value={f.value} onValueChange={f.onChange}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Elegí sabor" />
+                    <SelectTrigger className="flex-1 overflow-hidden">
+                      <SelectValue placeholder="Elegí sabor" className="truncate" />
                     </SelectTrigger>
                     <SelectContent>
                       {flavors.map(flavor => (
@@ -195,16 +195,17 @@ export default function PedidoForm() {
                 onClick={() => remove(idx)}
                 disabled={fields.length === 1}
               >
-                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
               </Button>
             </div>
           ))}
-          {errors.items && <p className="text-red-500 text-xs">{errors.items.message || (errors.items as any).root?.message}</p>}
+          {errors.items && <p className="text-destructive text-xs">{errors.items.message || (errors.items as any).root?.message}</p>}
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => append({ flavor_id: '', quantity: 1 })}
+            disabled={watchedItems.some(i => !i.flavor_id)}
           >
             <Plus className="w-3.5 h-3.5 mr-1" /> Agregar sabor
           </Button>
@@ -223,7 +224,7 @@ export default function PedidoForm() {
             placeholder="0.00"
           />
           {calculatedPrice > 0 && !priceEdited && (
-            <p className="text-xs text-slate-500 mt-1">Calculado: ${calculatedPrice.toLocaleString('es-AR')}</p>
+            <p className="text-xs text-muted-foreground mt-1">Calculado: ${calculatedPrice.toLocaleString('es-AR')}</p>
           )}
         </div>
 

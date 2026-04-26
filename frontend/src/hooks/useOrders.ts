@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
-import type { Order, OrderStatus } from '../types'
+import type { Order, OrderStatus, CalculatorResult } from '../types'
 
 export type OrderItemInput = { flavor_id: string; quantity: number }
 
@@ -29,6 +29,14 @@ export function useOrders(date: string) {
   return useQuery<Order[]>({
     queryKey: ['orders', date],
     queryFn: async () => (await api.get(`/api/orders?date=${date}`)).data,
+    enabled: !!date,
+  })
+}
+
+export function useCalculator(date: string) {
+  return useQuery<CalculatorResult>({
+    queryKey: ['calculator', date],
+    queryFn: async () => (await api.get(`/api/ingredients/calculator?date=${date}`)).data,
     enabled: !!date,
   })
 }

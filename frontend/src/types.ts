@@ -42,6 +42,14 @@ export interface Order {
   items: OrderItem[]
 }
 
+export interface RecipeItem {
+  id: string
+  ingredient_id: string
+  ingredient_name: string
+  unit: Unit
+  quantity_per_budin: number
+}
+
 export interface CalculatorResult {
   totals: {
     id: string

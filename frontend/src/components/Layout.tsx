@@ -14,35 +14,54 @@ export default function Layout() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-4">
-        <span className="font-semibold text-slate-800 text-lg">🍞 Cocina Naza</span>
-        <nav className="flex gap-1 flex-1">
+    <div className="min-h-dvh bg-background flex flex-col">
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+        <span
+          className="font-bold text-primary text-2xl tracking-wide"
+          style={{ fontFamily: "'Amatic SC', cursive" }}
+        >
+          Cocina Naza
+        </span>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="max-w-[140px] truncate">{user?.name}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { logout(undefined); navigate('/login') }}
+            aria-label="Cerrar sesión"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+      </header>
+
+      <main className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full pb-20">
+        <Outlet />
+      </main>
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex max-w-5xl mx-auto">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                `flex flex-col items-center justify-center gap-1 py-3 flex-1 text-xs font-medium transition-colors min-h-[56px] ${
+                  isActive
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`
               }
             >
-              <Icon className="w-4 h-4" />
-              {label}
+              <Icon className="w-5 h-5" />
+              <span>{label}</span>
             </NavLink>
           ))}
-        </nav>
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          {user?.name}
-          <Button variant="ghost" size="sm" onClick={() => { logout(undefined); navigate('/login') }}>
-            <LogOut className="w-4 h-4" />
-          </Button>
         </div>
-      </header>
-      <main className="p-6 max-w-5xl mx-auto">
-        <Outlet />
-      </main>
+      </nav>
     </div>
   )
 }
