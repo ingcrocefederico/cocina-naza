@@ -45,6 +45,7 @@ describe('GET /api/flavors', () => {
     mockQuery.mockResolvedValue({ rows: [flavor] })
     const res = await request(makeApp()).get('/api/flavors').set('Cookie', authCookie())
     expect(res.status).toBe(200)
+    expect(res.body).toEqual([flavor])
     expect(res.body[0].cost_per_budin).toBe('480.00')
     expect(res.body[0].profit_per_budin).toBe('1020.00')
   })
@@ -61,6 +62,7 @@ describe('GET /api/flavors', () => {
     }
     mockQuery.mockResolvedValue({ rows: [flavor] })
     const res = await request(makeApp()).get('/api/flavors').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
     expect(res.body[0].cost_per_budin).toBe('0.0000')
     expect(res.body[0].profit_per_budin).toBe('1000.0000')
   })
