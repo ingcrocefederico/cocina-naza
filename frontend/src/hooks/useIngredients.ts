@@ -14,7 +14,11 @@ export function useCreateIngredient() {
   return useMutation({
     mutationFn: (data: Pick<Ingredient, 'name' | 'unit'> & { price_per_unit?: string }) =>
       api.post<Ingredient>('/api/ingredients', data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredients'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ingredients'] })
+      qc.invalidateQueries({ queryKey: ['flavors'] })
+      qc.invalidateQueries({ queryKey: ['calculator'] })
+    },
   })
 }
 
@@ -23,7 +27,11 @@ export function useUpdateIngredient() {
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Ingredient> & { id: string }) =>
       api.put(`/api/ingredients/${id}`, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredients'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ingredients'] })
+      qc.invalidateQueries({ queryKey: ['flavors'] })
+      qc.invalidateQueries({ queryKey: ['calculator'] })
+    },
   })
 }
 
@@ -31,7 +39,11 @@ export function useDeleteIngredient() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.delete(`/api/ingredients/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredients'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ingredients'] })
+      qc.invalidateQueries({ queryKey: ['flavors'] })
+      qc.invalidateQueries({ queryKey: ['calculator'] })
+    },
   })
 }
 
