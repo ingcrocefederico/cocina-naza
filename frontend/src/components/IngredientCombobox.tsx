@@ -19,6 +19,10 @@ interface Props {
 
 const UNITS: Unit[] = ['kg', 'g', 'L', 'ml', 'unidad']
 
+function formatUnit(unit: string): string {
+  return unit === 'unidad' ? 'uni' : unit
+}
+
 interface NewIngredientForm {
   name: string
   unit: Unit
@@ -59,7 +63,7 @@ export function IngredientCombobox({ value, onChange, allowCreate = false }: Pro
             aria-expanded={open}
             className="w-full justify-between font-normal"
           >
-            {selected ? selected.name : <span className="text-muted-foreground">Ingrediente...</span>}
+            <span className="truncate">{selected ? selected.name : <span className="text-muted-foreground">Ingrediente...</span>}</span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -80,7 +84,7 @@ export function IngredientCombobox({ value, onChange, allowCreate = false }: Pro
                   >
                     <Check className={cn('mr-2 h-4 w-4', value === ing.id ? 'opacity-100' : 'opacity-0')} />
                     <span>{ing.name}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{ing.unit}</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{formatUnit(ing.unit)}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>

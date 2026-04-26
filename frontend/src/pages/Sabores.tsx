@@ -270,13 +270,21 @@ interface IngredientRowProps {
   onRemove: (key: number) => void
 }
 
+function formatUnit(unit: string): string {
+  return unit === 'unidad' ? 'uni' : unit
+}
+
 function IngredientRow({ row, onUpdate, onRemove }: IngredientRowProps) {
   const { data: ingredients = [] } = useIngredients()
   const ing = ingredients.find(i => i.id === row.ingredient_id)
+  const [active, setActive] = useState(false)
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1">
+    <div
+      className="relative flex items-center gap-2 pr-8"
+      onClick={() => setActive(a => !a)}
+    >
+      <div className="w-40 shrink-0">
         <IngredientCombobox
           value={row.ingredient_id}
           onChange={id => onUpdate(row.key, 'ingredient_id', id)}
@@ -285,19 +293,28 @@ function IngredientRow({ row, onUpdate, onRemove }: IngredientRowProps) {
       </div>
       <Input
         type="number"
-        className="w-24"
+        step="1"
+        className="w-20"
         placeholder="0"
         value={row.quantity_per_budin}
+        onKeyDown={e => { if (e.key === '.' || e.key === ',') e.preventDefault() }}
         onChange={e => onUpdate(row.key, 'quantity_per_budin', e.target.value)}
       />
       {ing && (
-        <Badge variant="secondary" className="w-14 justify-center shrink-0">
-          {ing.unit}
+        <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
+          {formatUnit(ing.unit)}
         </Badge>
       )}
-      <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => onRemove(row.key)}>
-        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-      </Button>
+      {active && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer"
+          onClick={e => { e.stopPropagation(); onRemove(row.key) }}
+        >
+          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+        </Button>
+      )}
     </div>
   )
 }
