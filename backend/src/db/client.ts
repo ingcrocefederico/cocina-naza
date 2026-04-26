@@ -8,4 +8,4 @@ const pool = new Pool({
 export const query = <T = Record<string, unknown>>(
   text: string,
   params?: unknown[]
-): Promise<{ rows: T[] }> => pool.query(text, params)
+): Promise<{ rows: T[] }> => pool.query(text, params) as unknown as Promise<{ rows: T[] }>
