@@ -71,8 +71,9 @@ flavorsRouter.get('/:id/recipe', async (req, res) => {
     ingredient_name: string
     unit: string
     quantity_per_budin: number
+    price_per_unit: string
   }>(
-    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ri.quantity_per_budin
+    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ri.quantity_per_budin, i.price_per_unit
      FROM recipe_items ri
      JOIN ingredients i ON i.id = ri.ingredient_id
      WHERE ri.flavor_id = $1
@@ -94,7 +95,7 @@ flavorsRouter.put('/:id/recipe', async (req, res) => {
     )
   }
   const result = await query(
-    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ri.quantity_per_budin
+    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ri.quantity_per_budin, i.price_per_unit
      FROM recipe_items ri
      JOIN ingredients i ON i.id = ri.ingredient_id
      WHERE ri.flavor_id = $1

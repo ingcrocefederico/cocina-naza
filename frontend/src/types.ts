@@ -50,6 +50,7 @@ export interface RecipeItem {
   ingredient_name: string
   unit: Unit
   quantity_per_budin: number
+  price_per_unit: string
 }
 
 export interface CalculatorResult {

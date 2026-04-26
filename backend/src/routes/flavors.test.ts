@@ -117,3 +117,24 @@ describe('DELETE /api/flavors/:id', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('GET /api/flavors/:id/recipe', () => {
+  beforeEach(() => mockQuery.mockReset())
+
+  it('returns recipe items with price_per_unit', async () => {
+    const item = {
+      id: 'ri-1',
+      ingredient_id: 'ing-1',
+      ingredient_name: 'Harina',
+      unit: 'kg',
+      quantity_per_budin: 0.5,
+      price_per_unit: '1200.00',
+    }
+    mockQuery.mockResolvedValue({ rows: [item] })
+    const res = await request(makeApp())
+      .get('/api/flavors/f-1/recipe')
+      .set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body[0].price_per_unit).toBe('1200.00')
+  })
+})
