@@ -61,7 +61,7 @@ export default function Sabores() {
       setRows(existingRecipe.map((r: RecipeItem) => ({
         key: rowKey++,
         ingredient_id: r.ingredient_id,
-        quantity_per_budin: String(r.quantity_per_budin),
+        quantity_per_budin: String(Math.round(Number(r.quantity_per_budin))),
       })))
     }
   }, [existingRecipe])
@@ -401,7 +401,7 @@ export default function Sabores() {
                         <div key={item.id} className="flex items-center justify-between text-sm">
                           <span className="text-foreground">{item.ingredient_name}</span>
                           <span className="text-muted-foreground tabular-nums">
-                            {item.quantity_per_budin} {formatUnit(item.unit)}
+                            {Math.round(Number(item.quantity_per_budin))} {formatUnit(item.unit)}
                           </span>
                         </div>
                       ))}
