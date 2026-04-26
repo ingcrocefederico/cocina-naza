@@ -262,12 +262,12 @@ export default function Sabores() {
 
       {/* Sheet editar / crear sabor */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+          <SheetHeader className="px-6 pt-6 pb-4">
             <SheetTitle>{editing ? 'Editar sabor' : 'Nuevo sabor'}</SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             {editing && (
               <div className="grid grid-cols-3 gap-2 rounded-lg border p-3 bg-muted/30 text-center">
                 <div>
@@ -347,7 +347,7 @@ export default function Sabores() {
             </div>
           </div>
 
-          <SheetFooter className="gap-2">
+          <SheetFooter className="gap-2 px-6 py-4 border-t border-border">
             <Button variant="outline" className="cursor-pointer" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button className="cursor-pointer" onClick={handleSave} disabled={!form.name || isSaving}>
               {isSaving ? 'Guardando...' : 'Guardar'}
@@ -364,17 +364,17 @@ export default function Sabores() {
           if (!open) setRecipeFlavorId(null)
         }}
       >
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-md flex flex-col gap-0 p-0">
           {recipeFlavor && (
             <>
-              <SheetHeader>
+              <SheetHeader className="px-6 pt-6 pb-4">
                 <SheetTitle className="flex items-center gap-2">
                   <span className="text-xl">{recipeFlavor.emoji}</span>
                   {recipeFlavor.name}
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="py-4 space-y-5">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
                 {/* Preparación */}
                 {recipeFlavor.preparation ? (
                   <div className="space-y-2">
