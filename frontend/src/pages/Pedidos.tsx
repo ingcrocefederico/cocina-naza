@@ -96,7 +96,7 @@ export default function Pedidos() {
               </strong></span>
             </>
           )}
-          <span>Deuda: <strong className="text-amber-500">${deuda.toLocaleString('es-AR')}</strong></span>
+          <span>Deuda: <strong className={deuda > 0 ? 'text-destructive' : 'text-foreground'}>${deuda.toLocaleString('es-AR')}</strong></span>
         </div>
       )}
 
