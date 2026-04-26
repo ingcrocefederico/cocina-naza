@@ -38,8 +38,10 @@ export const authRouter = Router()
 
 authRouter.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }))
 
+const clientBase = process.env.NODE_ENV === 'production' ? '' : (process.env.CLIENT_URL || 'http://localhost:5173')
+
 authRouter.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}/login?error=1` }),
+  passport.authenticate('google', { session: false, failureRedirect: `${clientBase}/login?error=1` }),
   (req, res) => {
     const user = req.user as User
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: '7d' })
@@ -49,7 +51,7 @@ authRouter.get('/google/callback',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     })
-    res.redirect(`${process.env.CLIENT_URL}/pedidos`)
+    res.redirect(`${clientBase}/pedidos`)
   }
 )
 

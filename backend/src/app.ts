@@ -13,7 +13,9 @@ const isProd = process.env.NODE_ENV === 'production'
 export function createApp() {
   const app = express()
 
-  if (!isProd) {
+  if (isProd) {
+    app.set('trust proxy', 1)
+  } else {
     app.use(cors({
       origin: process.env.CLIENT_URL || 'http://localhost:5173',
       credentials: true,
