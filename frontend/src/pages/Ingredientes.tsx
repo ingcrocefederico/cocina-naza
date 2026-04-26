@@ -12,6 +12,10 @@ import type { Ingredient, Unit } from '../types'
 
 const UNITS: Unit[] = ['kg', 'g', 'L', 'ml', 'unidad']
 
+function formatUnit(unit: string): string {
+  return unit === 'unidad' ? 'uni' : unit
+}
+
 interface IngredientForm {
   name: string
   unit: Unit
@@ -96,7 +100,7 @@ export default function Ingredientes() {
             {ingredients.map(ing => (
               <TableRow key={ing.id}>
                 <TableCell className="font-medium">{ing.name}</TableCell>
-                <TableCell className="text-muted-foreground">{ing.unit}</TableCell>
+                <TableCell className="text-muted-foreground">{formatUnit(ing.unit)}</TableCell>
                 <TableCell>
                   {ing.price_per_unit && parseFloat(ing.price_per_unit) > 0
                     ? `$${parseFloat(ing.price_per_unit).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
@@ -144,7 +148,7 @@ export default function Ingredientes() {
                 </SelectTrigger>
                 <SelectContent>
                   {UNITS.map(u => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                    <SelectItem key={u} value={u}>{formatUnit(u)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

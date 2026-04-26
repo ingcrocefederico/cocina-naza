@@ -46,6 +46,7 @@ export default function Sabores() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Flavor | null>(null)
   const [form, setForm] = useState<FlavorForm>(emptyForm)
+  const [activeRowKey, setActiveRowKey] = useState<number | null>(null)
   const [rows, setRows] = useState<RecipeRow[]>([])
 
   const { data: existingRecipe } = useFlavorRecipe(editing?.id ?? null)
@@ -247,6 +248,8 @@ export default function Sabores() {
                   row={row}
                   onUpdate={updateRow}
                   onRemove={removeRow}
+                  isActive={activeRowKey === row.key}
+                  onActivate={() => setActiveRowKey(k => k === row.key ? null : row.key)}
                 />
               ))}
             </div>
@@ -266,6 +269,8 @@ export default function Sabores() {
 
 interface IngredientRowProps {
   row: RecipeRow
+  isActive: boolean
+  onActivate: () => void
   onUpdate: (key: number, field: 'ingredient_id' | 'quantity_per_budin', value: string) => void
   onRemove: (key: number) => void
 }
@@ -274,17 +279,16 @@ function formatUnit(unit: string): string {
   return unit === 'unidad' ? 'uni' : unit
 }
 
-function IngredientRow({ row, onUpdate, onRemove }: IngredientRowProps) {
+function IngredientRow({ row, isActive, onActivate, onUpdate, onRemove }: IngredientRowProps) {
   const { data: ingredients = [] } = useIngredients()
   const ing = ingredients.find(i => i.id === row.ingredient_id)
-  const [active, setActive] = useState(false)
 
   return (
     <div
-      className="relative flex items-center gap-2 pr-8"
-      onClick={() => setActive(a => !a)}
+      className="relative flex items-center gap-2"
+      onClick={onActivate}
     >
-      <div className="w-40 shrink-0">
+      <div className="flex-1 min-w-0">
         <IngredientCombobox
           value={row.ingredient_id}
           onChange={id => onUpdate(row.key, 'ingredient_id', id)}
@@ -292,24 +296,23 @@ function IngredientRow({ row, onUpdate, onRemove }: IngredientRowProps) {
         />
       </div>
       <Input
-        type="number"
-        step="1"
-        className="w-20"
+        type="text"
+        inputMode="numeric"
+        className="w-20 shrink-0"
         placeholder="0"
         value={row.quantity_per_budin}
-        onKeyDown={e => { if (e.key === '.' || e.key === ',') e.preventDefault() }}
-        onChange={e => onUpdate(row.key, 'quantity_per_budin', e.target.value)}
+        onChange={e => onUpdate(row.key, 'quantity_per_budin', e.target.value.replace(/[^0-9]/g, ''))}
       />
       {ing && (
         <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
           {formatUnit(ing.unit)}
         </Badge>
       )}
-      {active && (
+      {isActive && (
         <Button
           variant="ghost"
           size="sm"
-          className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer"
+          className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer bg-background"
           onClick={e => { e.stopPropagation(); onRemove(row.key) }}
         >
           <Trash2 className="w-3.5 h-3.5 text-destructive" />
