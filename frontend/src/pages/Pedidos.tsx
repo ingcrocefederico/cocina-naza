@@ -95,10 +95,18 @@ export default function Pedidos() {
 
       {/* Totalizadores */}
       {orders.length > 0 && (
-        <div className="flex gap-6 text-sm text-muted-foreground border-b border-border pb-3">
+        <div className="flex flex-wrap gap-6 text-sm text-muted-foreground border-b border-border pb-3">
           <span><strong className="text-foreground">{orders.length}</strong> pedidos</span>
           <span><strong className="text-foreground">{totalBudines}</strong> budines</span>
           <span>Venta: <strong className="text-primary">${totalVenta.toLocaleString('es-AR')}</strong></span>
+          {calc?.financials && (
+            <>
+              <span>Costo: <strong className="text-foreground">${calc.financials.totalCost.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</strong></span>
+              <span>Gan.: <strong className={totalVenta - calc.financials.totalCost >= 0 ? 'text-green-500' : 'text-destructive'}>
+                ${(totalVenta - calc.financials.totalCost).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+              </strong></span>
+            </>
+          )}
         </div>
       )}
 
