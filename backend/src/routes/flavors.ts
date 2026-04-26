@@ -16,13 +16,14 @@ flavorsRouter.get('/', async (_req, res) => {
        f.price_per_budin,
        f.active,
        f.created_at,
+       f.preparation,
        COALESCE(SUM(ri.quantity_per_budin * i.price_per_unit), 0) AS cost_per_budin,
        f.price_per_budin - COALESCE(SUM(ri.quantity_per_budin * i.price_per_unit), 0) AS profit_per_budin
      FROM flavors f
      LEFT JOIN recipe_items ri ON ri.flavor_id = f.id
      LEFT JOIN ingredients i ON i.id = ri.ingredient_id
      WHERE f.active = true
-     GROUP BY f.id, f.name, f.emoji, f.price_per_budin, f.active, f.created_at
+     GROUP BY f.id, f.name, f.emoji, f.price_per_budin, f.active, f.created_at, f.preparation
      ORDER BY f.name`
   )
   res.json(result.rows)
