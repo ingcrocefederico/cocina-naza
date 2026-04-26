@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { IngredientCombobox } from '@/components/IngredientCombobox'
-import { Trash2, Plus, ChefHat } from 'lucide-react'
+import { Trash2, Plus } from 'lucide-react'
 import type { Flavor, RecipeItem } from '../types'
 
 function formatARS(value: string) {
@@ -48,10 +48,6 @@ export default function Sabores() {
   const [form, setForm] = useState<FlavorForm>(emptyForm)
   const [activeRowKey, setActiveRowKey] = useState<number | null>(null)
   const [rows, setRows] = useState<RecipeRow[]>([])
-
-  const [recipeFlavorId, setRecipeFlavorId] = useState<string | null>(null)
-  const [recipeOpen, setRecipeOpen] = useState(false)
-  const { data: recipe = [] } = useFlavorRecipe(recipeFlavorId)
 
   const { data: existingRecipe } = useFlavorRecipe(editing?.id ?? null)
 
@@ -113,12 +109,6 @@ export default function Sabores() {
 
   const isSaving = createFlavor.isPending || updateFlavor.isPending || saveRecipe.isPending
 
-  const recipeFlavor = recipeFlavorId ? (flavors.find(f => f.id === recipeFlavorId) ?? null) : null
-  const recipeTotalCost = recipe.reduce(
-    (sum, item) => sum + item.quantity_per_budin * parseFloat(item.price_per_unit || '0'),
-    0
-  )
-
   if (isLoading) return <div className="text-muted-foreground">Cargando...</div>
 
   return (
@@ -163,28 +153,14 @@ export default function Sabores() {
                     </span>
                   </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={e => {
-                      e.stopPropagation()
-                      setRecipeFlavorId(flavor.id)
-                      setRecipeOpen(true)
-                    }}
-                  >
-                    <ChefHat className="w-3.5 h-3.5 text-muted-foreground" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="cursor-pointer shrink-0"
+                  onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -285,92 +261,6 @@ export default function Sabores() {
               {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* Sheet de receta — solo lectura */}
-      <Sheet
-        open={recipeOpen}
-        onOpenChange={open => {
-          setRecipeOpen(open)
-          if (!open) setRecipeFlavorId(null)
-        }}
-      >
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-          {recipeFlavor && (
-            <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <span className="text-xl">{recipeFlavor.emoji}</span>
-                  {recipeFlavor.name}
-                </SheetTitle>
-              </SheetHeader>
-
-              <div className="py-4">
-                {recipe.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">Sin receta cargada aún.</p>
-                ) : (
-                  <>
-                    {/* Encabezado de columnas */}
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-1 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border">
-                      <span>Ingrediente</span>
-                      <span className="text-right">Cantidad</span>
-                      <span className="text-right w-20">Costo</span>
-                    </div>
-
-                    {/* Filas de ingredientes */}
-                    {recipe.map(item => {
-                      const price = parseFloat(item.price_per_unit || '0')
-                      const itemCost = item.quantity_per_budin * price
-                      return (
-                        <div
-                          key={item.id}
-                          className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-1 py-2.5 border-b border-border text-sm"
-                        >
-                          <span className="text-foreground">{item.ingredient_name}</span>
-                          <span className="text-right text-muted-foreground tabular-nums whitespace-nowrap">
-                            {item.quantity_per_budin} {formatUnit(item.unit)}
-                          </span>
-                          <span className="text-right tabular-nums w-20">
-                            {price === 0
-                              ? <span className="text-muted-foreground">—</span>
-                              : formatARS(String(itemCost))
-                            }
-                          </span>
-                        </div>
-                      )
-                    })}
-
-                    <Separator className="my-3" />
-
-                    {/* Totales */}
-                    <div className="space-y-2 px-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Costo total</span>
-                        <span className="font-medium tabular-nums">{formatARS(String(recipeTotalCost))}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Precio de venta</span>
-                        <span className="font-medium tabular-nums">{formatARS(recipeFlavor.price_per_budin)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm font-semibold">
-                        <span className="text-muted-foreground">Ganancia</span>
-                        <span
-                          className={`tabular-nums ${
-                            parseFloat(recipeFlavor.price_per_budin) - recipeTotalCost >= 0
-                              ? 'text-green-500'
-                              : 'text-destructive'
-                          }`}
-                        >
-                          {formatARS(String(parseFloat(recipeFlavor.price_per_budin) - recipeTotalCost))}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
         </SheetContent>
       </Sheet>
     </div>
