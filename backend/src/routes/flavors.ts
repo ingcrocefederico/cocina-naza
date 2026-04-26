@@ -9,7 +9,21 @@ flavorsRouter.use(requireAuth)
 
 flavorsRouter.get('/', async (_req, res) => {
   const result = await query<Flavor>(
-    'SELECT * FROM flavors WHERE active = true ORDER BY name'
+    `SELECT
+       f.id,
+       f.name,
+       f.emoji,
+       f.price_per_budin,
+       f.active,
+       f.created_at,
+       COALESCE(SUM(ri.quantity_per_budin * i.price_per_unit), 0) AS cost_per_budin,
+       f.price_per_budin - COALESCE(SUM(ri.quantity_per_budin * i.price_per_unit), 0) AS profit_per_budin
+     FROM flavors f
+     LEFT JOIN recipe_items ri ON ri.flavor_id = f.id
+     LEFT JOIN ingredients i ON i.id = ri.ingredient_id
+     WHERE f.active = true
+     GROUP BY f.id, f.name, f.emoji, f.price_per_budin, f.active, f.created_at
+     ORDER BY f.name`
   )
   res.json(result.rows)
 })

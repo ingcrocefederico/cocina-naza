@@ -33,11 +33,36 @@ describe('GET /api/flavors', () => {
   })
 
   it('returns list of flavors', async () => {
-    const flavor = { id: 'f-1', name: 'Vainilla', emoji: '🍦', price_per_budin: '1500.00', active: true }
+    const flavor = {
+      id: 'f-1',
+      name: 'Vainilla',
+      emoji: '🍦',
+      price_per_budin: '1500.00',
+      active: true,
+      cost_per_budin: '480.00',
+      profit_per_budin: '1020.00',
+    }
     mockQuery.mockResolvedValue({ rows: [flavor] })
     const res = await request(makeApp()).get('/api/flavors').set('Cookie', authCookie())
     expect(res.status).toBe(200)
-    expect(res.body).toEqual([flavor])
+    expect(res.body[0].cost_per_budin).toBe('480.00')
+    expect(res.body[0].profit_per_budin).toBe('1020.00')
+  })
+
+  it('returns cost 0 and profit equal to price when no recipe', async () => {
+    const flavor = {
+      id: 'f-2',
+      name: 'Sin receta',
+      emoji: '🍰',
+      price_per_budin: '1000.00',
+      active: true,
+      cost_per_budin: '0.0000',
+      profit_per_budin: '1000.0000',
+    }
+    mockQuery.mockResolvedValue({ rows: [flavor] })
+    const res = await request(makeApp()).get('/api/flavors').set('Cookie', authCookie())
+    expect(res.body[0].cost_per_budin).toBe('0.0000')
+    expect(res.body[0].profit_per_budin).toBe('1000.0000')
   })
 })
 
