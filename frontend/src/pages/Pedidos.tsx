@@ -69,6 +69,7 @@ export default function Pedidos() {
 
   const totalBudines = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0)
   const totalVenta = orders.reduce((sum, o) => sum + parseFloat(o.sale_price || '0'), 0)
+  const deuda = orders.filter(o => o.status !== 'cobrado').reduce((sum, o) => sum + parseFloat(o.sale_price || '0'), 0)
 
   return (
     <div className="space-y-4">
@@ -107,6 +108,7 @@ export default function Pedidos() {
               </strong></span>
             </>
           )}
+          <span>Deuda: <strong className="text-amber-500">${deuda.toLocaleString('es-AR')}</strong></span>
         </div>
       )}
 
