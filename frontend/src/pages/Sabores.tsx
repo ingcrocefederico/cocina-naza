@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
@@ -126,8 +127,15 @@ export default function Sabores() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {flavors.map(flavor => (
+      <Tabs defaultValue="comunes">
+        <TabsList className="mb-3">
+          <TabsTrigger value="comunes">Comunes</TabsTrigger>
+          <TabsTrigger value="integral">Integral</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="comunes">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {flavors.filter(f => !f.name.startsWith('(Int)')).map(flavor => (
           <Card
             key={flavor.id}
             className="cursor-pointer hover:bg-muted/30 transition-colors"
@@ -184,8 +192,73 @@ export default function Sabores() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="integral">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {flavors.filter(f => f.name.startsWith('(Int)')).map(flavor => (
+              <Card
+                key={flavor.id}
+                className="cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => openEdit(flavor)}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2 text-foreground">
+                    <span className="text-xl">{flavor.emoji}</span>
+                    {flavor.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex gap-3 text-xs">
+                      <span className="text-muted-foreground">
+                        Venta <span className="text-foreground font-semibold">{formatARS(flavor.price_per_budin)}</span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Costo{' '}
+                        {parseFloat(flavor.cost_per_budin) > 0
+                          ? <span className="text-foreground font-medium">{formatARS(flavor.cost_per_budin)}</span>
+                          : <span className="text-muted-foreground/60">—</span>
+                        }
+                      </span>
+                      <span className="text-muted-foreground">
+                        Gan.{' '}
+                        <span className={parseFloat(flavor.profit_per_budin) >= 0 ? 'font-semibold text-green-500' : 'font-semibold text-destructive'}>
+                          {formatARS(flavor.profit_per_budin)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={e => {
+                          e.stopPropagation()
+                          setRecipeFlavorId(flavor.id)
+                          setRecipeOpen(true)
+                        }}
+                      >
+                        <ChefHat className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Sheet editar / crear sabor */}
       <Sheet open={open} onOpenChange={setOpen}>
