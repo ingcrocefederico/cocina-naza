@@ -5,16 +5,27 @@
 ### Requisitos
 
 - Node.js 20+
-- npm
+- npm 7+ (workspaces)
 - PostgreSQL local O una cuenta en [neon.tech](https://neon.tech) (recomendado)
 
 ---
 
-### 1. Clonar y configurar variables de entorno
+### 1. Instalar todas las dependencias (una sola vez)
+
+Desde la raíz del proyecto:
 
 ```bash
-cd backend
-cp .env.example .env
+npm install
+```
+
+Esto instala las deps de `backend/`, `frontend/` y la raíz en un solo paso gracias a npm workspaces.
+
+---
+
+### 2. Configurar variables de entorno
+
+```bash
+cp backend/.env.example backend/.env
 ```
 
 Editar `backend/.env` con valores reales:
@@ -33,13 +44,13 @@ NODE_ENV=development
 
 ---
 
-### 2. Correr la migración SQL
+### 3. Correr la migración SQL (una sola vez)
 
 ```bash
 psql $DATABASE_URL -f backend/src/db/migrations/001_init.sql
 ```
 
-Solo necesitás hacerlo una vez. Si usás PostgreSQL local:
+Si usás PostgreSQL local:
 ```bash
 createdb cocina
 psql cocina -f backend/src/db/migrations/001_init.sql
@@ -47,33 +58,32 @@ psql cocina -f backend/src/db/migrations/001_init.sql
 
 ---
 
-### 3. Levantar el backend
+### 4. Levantar FE + BE juntos
 
 ```bash
-cd backend
-npm install
 npm run dev
 ```
 
-Backend corre en `http://localhost:3000`. Verificar:
+Levanta backend (`:3000`) y frontend (`:5173`) en paralelo con output diferenciado por color.
+
+Las requests a `/api/*` se proxean automáticamente al backend (configurado en `vite.config.ts`).
+
+Para levantar por separado si necesitás:
 ```bash
-curl http://localhost:3000/health
-# → {"ok":true}
+npm run dev -w backend    # solo backend
+npm run dev -w frontend   # solo frontend
 ```
 
 ---
 
-### 4. Levantar el frontend
+### Comandos disponibles desde la raíz
 
-En otra terminal:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend corre en `http://localhost:5173`. Las requests a `/api/*` se proxean automáticamente al backend en el puerto 3000 (configurado en `vite.config.ts`).
+| Comando | Qué hace |
+|---------|----------|
+| `npm install` | Instala deps de todos los workspaces |
+| `npm run dev` | Levanta BE + FE en paralelo |
+| `npm run build` | Buildea BE y FE en secuencia |
+| `npm test` | Corre los tests del backend |
 
 ---
 
