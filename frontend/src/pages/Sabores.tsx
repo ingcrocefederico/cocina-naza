@@ -318,6 +318,24 @@ export default function Sabores() {
                   <p className="text-sm text-muted-foreground text-center py-4">Sin receta cargada aún.</p>
                 )}
 
+                {/* Ingredientes */}
+                {recipe.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Ingredientes</p>
+                      {recipe.map(item => (
+                        <div key={item.id} className="flex items-center justify-between text-sm">
+                          <span className="text-foreground">{item.ingredient_name}</span>
+                          <span className="text-muted-foreground tabular-nums">
+                            {item.quantity_per_budin} {formatUnit(item.unit)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
                 {/* Costos — solo si hay ingredientes con precio */}
                 {recipe.length > 0 && (
                   <>
