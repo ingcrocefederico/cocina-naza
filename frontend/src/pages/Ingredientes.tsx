@@ -3,7 +3,7 @@ import { useIngredients, useCreateIngredient, useUpdateIngredient, useDeleteIngr
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -142,16 +142,12 @@ export default function Ingredientes() {
 
             <div className="space-y-1">
               <Label>Unidad</Label>
-              <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v as Unit }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNITS.map(u => (
-                    <SelectItem key={u} value={u}>{formatUnit(u)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SelectSheet
+                value={form.unit}
+                onValueChange={v => setForm(f => ({ ...f, unit: v as Unit }))}
+                options={UNITS.map(u => ({ value: u, label: formatUnit(u) }))}
+                title="Unidad"
+              />
             </div>
 
             <div className="space-y-1">

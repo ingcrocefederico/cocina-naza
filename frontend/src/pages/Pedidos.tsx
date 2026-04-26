@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useOrders, useUpdateOrder, useDeleteOrder, useCalculator } from '../hooks/useOrders'
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown } from 'lucide-react'
 import type { Order, OrderStatus } from '../types'
@@ -33,18 +33,6 @@ export default function Pedidos() {
   const deleteOrder = useDeleteOrder()
   const navigate = useNavigate()
 
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
-  const listRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (listRef.current && !listRef.current.contains(e.target as Node)) {
-        setActiveOrderId(null)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetView, setSheetView] = useState<SheetView>('total')
@@ -119,71 +107,64 @@ export default function Pedidos() {
       )}
 
       {/* Lista de pedidos */}
-      <div className="space-y-2" ref={listRef}>
+      <div className="space-y-2">
         {orders.map(order => (
           <Card
             key={order.id}
-            className={`relative border-l-[3px] ${STATUS_BORDER[order.status]} transition-colors cursor-pointer ${activeOrderId === order.id ? 'bg-muted/40' : 'hover:bg-muted/20'}`}
-            onClick={() => setActiveOrderId(id => id === order.id ? null : order.id)}
+            className={`border-l-[3px] ${STATUS_BORDER[order.status]} transition-colors`}
           >
-            {/* Acciones: aparecen al hacer click */}
-            {activeOrderId === order.id && (
-              <div
-                className="absolute inset-y-0 right-0 flex items-center gap-1 px-2 bg-gradient-to-l from-muted/90 via-muted/80 to-transparent rounded-r-lg z-10"
-                onClick={e => e.stopPropagation()}
-              >
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => navigate(`/pedidos/${order.id}?date=${date}`)}>
-                  <Pencil className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => deleteOrder.mutate(order.id)}>
-                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                </Button>
-              </div>
-            )}
-
-            <CardContent className="px-3 py-2.5">
-              {/* Línea 1: nombre + estado + precio */}
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="font-semibold text-foreground text-sm truncate flex-1">{order.client_name}</span>
-                <Select value={order.status} onValueChange={val => { changeStatus(order, val as OrderStatus); }} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                  <SelectTrigger className="w-fit h-6 px-1.5 border-0 shadow-none bg-transparent focus:ring-0 cursor-pointer shrink-0">
-                    <SelectValue><StatusBadge status={order.status} /></SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map(s => (
-                      <SelectItem key={s} value={s}><StatusBadge status={s} /></SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {order.sale_price && (
-                  <span className="text-sm font-semibold text-primary tabular-nums shrink-0">
-                    ${parseFloat(order.sale_price).toLocaleString('es-AR')}
-                  </span>
+            <CardContent className="px-3 py-2.5 flex gap-2">
+              {/* Izquierda: nombre + sabores + dirección/notas */}
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold text-foreground text-sm truncate block">{order.client_name}</span>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                  {order.items.map((item, idx) => (
+                    <span key={idx} className="text-xs text-muted-foreground whitespace-nowrap">
+                      {item.flavor_emoji} {item.flavor_name} <span className="font-medium text-foreground">×{item.quantity}</span>
+                    </span>
+                  ))}
+                </div>
+                {(order.address || order.notes) && (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {order.address && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-0.5 truncate">
+                        <MapPin className="w-3 h-3 shrink-0" />{order.address}
+                      </span>
+                    )}
+                    {order.notes && (
+                      <span className="text-xs text-muted-foreground italic truncate">{order.notes}</span>
+                    )}
+                  </div>
                 )}
               </div>
 
-              {/* Línea 2: sabores */}
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                {order.items.map((item, idx) => (
-                  <span key={idx} className="text-xs text-muted-foreground whitespace-nowrap">
-                    {item.flavor_emoji} {item.flavor_name} <span className="font-medium text-foreground">×{item.quantity}</span>
-                  </span>
-                ))}
-              </div>
-
-              {/* Línea 3 (opcional): dirección y/o notas */}
-              {(order.address || order.notes) && (
-                <div className="flex items-center gap-2 mt-0.5">
-                  {order.address && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-0.5 truncate">
-                      <MapPin className="w-3 h-3 shrink-0" />{order.address}
+              {/* Derecha: arriba select+monto, abajo edit+remove */}
+              <div className="flex flex-col items-end justify-between gap-1 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <SelectSheet
+                    value={order.status}
+                    onValueChange={val => changeStatus(order, val as OrderStatus)}
+                    options={STATUSES.map(s => ({ value: s, label: s }))}
+                    renderValue={opt => opt ? <StatusBadge status={opt.value as OrderStatus} /> : <StatusBadge status={order.status} />}
+                    renderOption={opt => <StatusBadge status={opt.value as OrderStatus} />}
+                    title="Estado del pedido"
+                    className="w-fit h-7 text-xs px-2 border-0 shadow-none bg-transparent"
+                  />
+                  {order.sale_price && (
+                    <span className="text-sm font-semibold text-primary tabular-nums">
+                      ${parseFloat(order.sale_price).toLocaleString('es-AR')}
                     </span>
                   )}
-                  {order.notes && (
-                    <span className="text-xs text-muted-foreground italic truncate">{order.notes}</span>
-                  )}
                 </div>
-              )}
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => navigate(`/pedidos/${order.id}?date=${date}`)}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => deleteOrder.mutate(order.id)}>
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}

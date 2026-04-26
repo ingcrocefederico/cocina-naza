@@ -1,13 +1,9 @@
 import { useState } from 'react'
-import { Check, ChevronsUpDown, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { SelectSheet } from '@/components/ui/select-sheet'
 import { useIngredients, useCreateIngredient } from '@/hooks/useIngredients'
 import type { Unit } from '@/types'
 
@@ -35,11 +31,8 @@ export function IngredientCombobox({ value, onChange, allowCreate = false }: Pro
   const { data: ingredients = [] } = useIngredients()
   const createIngredient = useCreateIngredient()
 
-  const [open, setOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState<NewIngredientForm>(emptyForm)
-
-  const selected = ingredients.find(i => i.id === value)
 
   async function handleCreate() {
     if (!form.name || !form.unit) return
@@ -55,59 +48,16 @@ export function IngredientCombobox({ value, onChange, allowCreate = false }: Pro
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between font-normal"
-          >
-            <span className="truncate">{selected ? selected.name : <span className="text-muted-foreground">Ingrediente...</span>}</span>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[280px] p-0" align="start" onWheel={e => e.stopPropagation()}>
-          <Command>
-            <CommandInput placeholder="Buscar ingrediente..." />
-            <CommandList>
-              <CommandEmpty>Sin resultados.</CommandEmpty>
-              <CommandGroup>
-                {ingredients.map(ing => (
-                  <CommandItem
-                    key={ing.id}
-                    value={ing.name}
-                    onSelect={() => {
-                      onChange(ing.id)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check className={cn('mr-2 h-4 w-4', value === ing.id ? 'opacity-100' : 'opacity-0')} />
-                    <span>{ing.name}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{formatUnit(ing.unit)}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              {allowCreate && (
-                <>
-                  <CommandSeparator />
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={() => {
-                        setOpen(false)
-                        setDialogOpen(true)
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Nuevo ingrediente
-                    </CommandItem>
-                  </CommandGroup>
-                </>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <SelectSheet
+        value={value}
+        onValueChange={onChange}
+        options={ingredients.map(i => ({ value: i.id, label: i.name, sublabel: formatUnit(i.unit) }))}
+        placeholder="Ingrediente..."
+        title="Ingrediente"
+        searchable
+        onCreate={allowCreate ? () => setDialogOpen(true) : undefined}
+        createLabel="Nuevo ingrediente"
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-sm">
@@ -125,16 +75,12 @@ export function IngredientCombobox({ value, onChange, allowCreate = false }: Pro
             </div>
             <div className="space-y-1">
               <Label>Unidad</Label>
-              <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v as Unit }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNITS.map(u => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SelectSheet
+                value={form.unit}
+                onValueChange={v => setForm(f => ({ ...f, unit: v as Unit }))}
+                options={UNITS.map(u => ({ value: u, label: formatUnit(u) }))}
+                title="Unidad"
+              />
             </div>
             <div className="space-y-1">
               <Label>Precio por unidad <span className="text-muted-foreground text-xs">(opcional)</span></Label>
@@ -149,10 +95,7 @@ export function IngredientCombobox({ value, onChange, allowCreate = false }: Pro
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!form.name || createIngredient.isPending}
-            >
+            <Button onClick={handleCreate} disabled={!form.name || createIngredient.isPending}>
               {createIngredient.isPending ? 'Creando...' : 'Crear y seleccionar'}
             </Button>
           </DialogFooter>

@@ -9,7 +9,7 @@ import { useCreateOrder, useUpdateOrder, useOrders } from '../hooks/useOrders'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectSheet } from '@/components/ui/select-sheet'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Trash2, Plus, ArrowLeft } from 'lucide-react'
 import type { OrderStatus } from '../types'
@@ -77,8 +77,20 @@ export default function PedidoForm() {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
   const watchedItems = useWatch({ control, name: 'items' })
 
+  const [flavorTypes, setFlavorTypes] = useState<('común' | 'integral')[]>(['común'])
+
+  function appendFlavor(type: 'común' | 'integral') {
+    append({ flavor_id: '', quantity: 1 })
+    setFlavorTypes(prev => [...prev, type])
+  }
+
+  function removeItem(idx: number) {
+    remove(idx)
+    setFlavorTypes(prev => prev.filter((_, i) => i !== idx))
+  }
+
   useEffect(() => {
-    if (existingOrder) {
+    if (existingOrder && flavors.length > 0) {
       setValue('client_name', existingOrder.client_name)
       setValue('address', existingOrder.address || '')
       setValue('date', existingOrder.date)
@@ -86,8 +98,12 @@ export default function PedidoForm() {
       setValue('sale_price', existingOrder.sale_price || '')
       setValue('notes', existingOrder.notes || '')
       setValue('items', existingOrder.items.map(i => ({ flavor_id: i.flavor_id, quantity: i.quantity })))
+      setFlavorTypes(existingOrder.items.map(i => {
+        const flavor = flavors.find(f => f.id === i.flavor_id)
+        return flavor?.name.startsWith('(Int)') ? 'integral' : 'común'
+      }))
     }
-  }, [existingOrder, setValue])
+  }, [existingOrder, setValue, flavors])
 
   const calculatedPrice = useMemo(() => {
     return watchedItems.reduce((sum, item) => {
@@ -154,14 +170,12 @@ export default function PedidoForm() {
               control={control}
               name="status"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map(s => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SelectSheet
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={STATUSES.map(s => ({ value: s.value, label: s.label }))}
+                  title="Estado"
+                />
               )}
             />
           </div>
@@ -169,66 +183,89 @@ export default function PedidoForm() {
 
         <div className="space-y-2">
           <Label>Budines</Label>
-          {fields.map((field, idx) => (
-            <div key={field.id} className="flex gap-2 items-center">
-              <Controller
-                control={control}
-                name={`items.${idx}.flavor_id`}
-                render={({ field: f }) => (
-                  <Select value={f.value} onValueChange={f.onChange}>
-                    <SelectTrigger className="flex-1 overflow-hidden">
-                      <SelectValue placeholder="Elegí sabor" className="truncate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {flavors.map(flavor => (
-                        <SelectItem key={flavor.id} value={flavor.id}>
-                          {flavor.emoji} {flavor.name} — ${parseFloat(flavor.price_per_budin).toLocaleString('es-AR')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <Input
-                type="number"
-                min={1}
-                className="w-20"
-                {...register(`items.${idx}.quantity`)}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => remove(idx)}
-                disabled={fields.length === 1}
-              >
-                <Trash2 className="w-3.5 h-3.5 text-destructive" />
-              </Button>
-            </div>
-          ))}
+          {fields.map((field, idx) => {
+            const type = flavorTypes[idx] ?? 'común'
+            const filteredFlavors = flavors.filter(f =>
+              type === 'integral' ? f.name.startsWith('(Int)') : !f.name.startsWith('(Int)')
+            )
+            return (
+              <div key={field.id} className="flex gap-2 items-center">
+                <Controller
+                  control={control}
+                  name={`items.${idx}.flavor_id`}
+                  render={({ field: f }) => (
+                    <SelectSheet
+                      value={f.value}
+                      onValueChange={f.onChange}
+                      options={filteredFlavors.map(flavor => ({
+                        value: flavor.id,
+                        label: `${flavor.emoji} ${flavor.name}`,
+                        sublabel: `$${parseFloat(flavor.price_per_budin).toLocaleString('es-AR')}`,
+                      }))}
+                      placeholder={`Elegí sabor ${type}`}
+                      title={`Sabor ${type}`}
+                      searchable
+                      className="flex-1 overflow-hidden"
+                    />
+                  )}
+                />
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-20"
+                  {...register(`items.${idx}.quantity`)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeItem(idx)}
+                  disabled={fields.length === 1}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </Button>
+              </div>
+            )
+          })}
           {errors.items && <p className="text-destructive text-xs">{errors.items.message || (errors.items as any).root?.message}</p>}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ flavor_id: '', quantity: 1 })}
-            disabled={watchedItems.some(i => !i.flavor_id)}
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Agregar sabor
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => appendFlavor('común')}
+              disabled={watchedItems.some(i => !i.flavor_id)}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" /> Agregar Sabor común
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => appendFlavor('integral')}
+              disabled={watchedItems.some(i => !i.flavor_id)}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" /> Agregar Sabor integral
+            </Button>
+          </div>
         </div>
 
         <div>
           <Label>Precio de venta ($)</Label>
           <Input
-            type="number"
-            step="0.01"
-            {...register('sale_price')}
+            type="text"
+            inputMode="numeric"
+            value={
+              watch('sale_price')
+                ? parseFloat(watch('sale_price') || '0').toLocaleString('es-AR', { maximumFractionDigits: 0 })
+                : ''
+            }
             onChange={e => {
               setPriceEdited(true)
-              register('sale_price').onChange(e)
+              const raw = e.target.value.replace(/[^0-9]/g, '')
+              setValue('sale_price', raw)
             }}
-            placeholder="0.00"
+            placeholder="0"
           />
           {calculatedPrice > 0 && !priceEdited && (
             <p className="text-xs text-muted-foreground mt-1">Calculado: ${calculatedPrice.toLocaleString('es-AR')}</p>
