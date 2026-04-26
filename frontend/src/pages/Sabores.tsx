@@ -311,10 +311,18 @@ export default function Sabores() {
             <div className="space-y-1">
               <Label>Precio por budín ($)</Label>
               <Input
-                type="number"
-                value={form.price_per_budin}
-                onChange={e => setForm(f => ({ ...f, price_per_budin: e.target.value }))}
-                placeholder="5500"
+                type="text"
+                inputMode="numeric"
+                value={
+                  form.price_per_budin
+                    ? parseFloat(form.price_per_budin).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+                    : ''
+                }
+                onChange={e => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '')
+                  setForm(f => ({ ...f, price_per_budin: raw }))
+                }}
+                placeholder="5.500"
               />
             </div>
 
