@@ -15,6 +15,10 @@ import { IngredientCombobox } from '@/components/IngredientCombobox'
 import { Trash2, Plus } from 'lucide-react'
 import type { Flavor, RecipeItem } from '../types'
 
+function formatARS(value: string) {
+  return `$${parseFloat(value).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
 interface FlavorForm {
   name: string
   emoji: string
@@ -126,18 +130,35 @@ export default function Sabores() {
                 {flavor.name}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <span className="text-primary font-semibold">
-                ${parseFloat(flavor.price_per_budin).toLocaleString('es-AR')}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="cursor-pointer"
-                onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
-              >
-                <Trash2 className="w-3.5 h-3.5 text-destructive" />
-              </Button>
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex gap-3 text-xs">
+                  <span className="text-muted-foreground">
+                    Venta <span className="text-foreground font-semibold">{formatARS(flavor.price_per_budin)}</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    Costo{' '}
+                    {parseFloat(flavor.cost_per_budin) > 0
+                      ? <span className="text-foreground font-medium">{formatARS(flavor.cost_per_budin)}</span>
+                      : <span className="text-muted-foreground/60">—</span>
+                    }
+                  </span>
+                  <span className="text-muted-foreground">
+                    Gan.{' '}
+                    <span className={parseFloat(flavor.profit_per_budin) >= 0 ? 'font-semibold text-green-500' : 'font-semibold text-destructive'}>
+                      {formatARS(flavor.profit_per_budin)}
+                    </span>
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="cursor-pointer shrink-0"
+                  onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -150,6 +171,26 @@ export default function Sabores() {
           </SheetHeader>
 
           <div className="space-y-4 py-4">
+            {editing && (
+              <div className="grid grid-cols-3 gap-2 rounded-lg border p-3 bg-muted/30 text-center">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Venta</p>
+                  <p className="text-sm font-semibold text-foreground">{formatARS(editing.price_per_budin)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Costo</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {parseFloat(editing.cost_per_budin) > 0 ? formatARS(editing.cost_per_budin) : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Ganancia</p>
+                  <p className={`text-sm font-semibold ${parseFloat(editing.profit_per_budin) >= 0 ? 'text-green-500' : 'text-destructive'}`}>
+                    {formatARS(editing.profit_per_budin)}
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Datos del sabor */}
             <div className="grid grid-cols-[1fr_80px] gap-3">
               <div className="space-y-1">
