@@ -16,7 +16,9 @@ import { Trash2, Plus } from 'lucide-react'
 import type { Flavor, RecipeItem } from '../types'
 
 function formatARS(value: string) {
-  return `$${parseFloat(value).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+  const n = parseFloat(value)
+  if (isNaN(n)) return '—'
+  return `$${n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
 }
 
 interface FlavorForm {

@@ -49,6 +49,7 @@ export function useSaveFlavorRecipe() {
       api.put(`/api/flavors/${id}/recipe`, items),
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ['flavor-recipe', id] })
+      qc.invalidateQueries({ queryKey: ['flavors'] })
     },
   })
 }
