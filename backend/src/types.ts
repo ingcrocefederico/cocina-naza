@@ -14,6 +14,8 @@ export interface Flavor {
   price_per_budin: string
   active: boolean
   created_at: string
+  cost_per_budin: string
+  profit_per_budin: string
 }
 
 export interface Ingredient {

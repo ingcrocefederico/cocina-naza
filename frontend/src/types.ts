@@ -14,6 +14,8 @@ export interface Flavor {
   emoji: string
   price_per_budin: string
   active: boolean
+  cost_per_budin: string
+  profit_per_budin: string
 }
 
 export interface Ingredient {
