@@ -14,8 +14,8 @@ export default function Layout() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col">
-      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+    <div className="h-dvh bg-background flex flex-col overflow-hidden">
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between shrink-0 z-40">
         <span
           className="font-bold text-primary text-2xl tracking-wide"
           style={{ fontFamily: "'Amatic SC', cursive" }}
@@ -35,7 +35,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full pb-20">
+      <main className="flex-1 overflow-y-auto px-4 pt-4 pb-24 md:px-6 md:pt-6 max-w-5xl mx-auto w-full">
         <Outlet />
       </main>
 

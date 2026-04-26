@@ -5,6 +5,7 @@ import { useOrders, useUpdateOrder, useDeleteOrder, useCalculator } from '../hoo
 import StatusBadge from '../components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -75,12 +76,7 @@ export default function Pedidos() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold text-foreground">Pedidos</h1>
-          <Input
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            className="w-40"
-          />
+          <DatePicker value={date} onChange={setDate} className="w-40" />
         </div>
         <div className="flex items-center gap-2">
           <Button

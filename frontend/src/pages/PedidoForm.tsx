@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Trash2, Plus, ArrowLeft } from 'lucide-react'
 import type { OrderStatus } from '../types'
 
@@ -139,7 +140,13 @@ export default function PedidoForm() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Fecha</Label>
-            <Input type="date" {...register('date')} />
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => (
+                <DatePicker value={field.value} onChange={field.onChange} />
+              )}
+            />
           </div>
           <div>
             <Label>Estado</Label>

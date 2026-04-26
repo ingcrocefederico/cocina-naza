@@ -121,3 +121,15 @@ ingredientsRouter.put('/:id', async (req, res) => {
   }
   res.json(result.rows[0])
 })
+
+ingredientsRouter.delete('/:id', async (req, res) => {
+  const result = await query<Ingredient>(
+    'DELETE FROM ingredients WHERE id = $1 RETURNING *',
+    [req.params.id]
+  )
+  if (!result.rows.length) {
+    res.status(404).json({ error: 'Ingredient not found' })
+    return
+  }
+  res.json(result.rows[0])
+})

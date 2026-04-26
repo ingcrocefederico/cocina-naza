@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { IngredientCombobox } from '@/components/IngredientCombobox'
 import { Trash2, Plus } from 'lucide-react'
 import type { Flavor, RecipeItem } from '../types'
 
@@ -32,7 +32,6 @@ let rowKey = 0
 
 export default function Sabores() {
   const { data: flavors = [], isLoading } = useFlavors()
-  const { data: ingredients = [] } = useIngredients()
   const createFlavor = useCreateFlavor()
   const updateFlavor = useUpdateFlavor()
   const deleteFlavor = useDeleteFlavor()
@@ -199,43 +198,14 @@ export default function Sabores() {
                 </p>
               )}
 
-              {rows.map(row => {
-                const ing = ingredients.find(i => i.id === row.ingredient_id)
-                return (
-                  <div key={row.key} className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <Select
-                        value={row.ingredient_id}
-                        onValueChange={v => updateRow(row.key, 'ingredient_id', v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Ingrediente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ingredients.map(i => (
-                            <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      placeholder="0"
-                      value={row.quantity_per_budin}
-                      onChange={e => updateRow(row.key, 'quantity_per_budin', e.target.value)}
-                    />
-                    {ing && (
-                      <Badge variant="secondary" className="w-14 justify-center shrink-0">
-                        {ing.unit}
-                      </Badge>
-                    )}
-                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => removeRow(row.key)}>
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                )
-              })}
+              {rows.map(row => (
+                <IngredientRow
+                  key={row.key}
+                  row={row}
+                  onUpdate={updateRow}
+                  onRemove={removeRow}
+                />
+              ))}
             </div>
           </div>
 
@@ -247,6 +217,44 @@ export default function Sabores() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+    </div>
+  )
+}
+
+interface IngredientRowProps {
+  row: RecipeRow
+  onUpdate: (key: number, field: 'ingredient_id' | 'quantity_per_budin', value: string) => void
+  onRemove: (key: number) => void
+}
+
+function IngredientRow({ row, onUpdate, onRemove }: IngredientRowProps) {
+  const { data: ingredients = [] } = useIngredients()
+  const ing = ingredients.find(i => i.id === row.ingredient_id)
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1">
+        <IngredientCombobox
+          value={row.ingredient_id}
+          onChange={id => onUpdate(row.key, 'ingredient_id', id)}
+          allowCreate
+        />
+      </div>
+      <Input
+        type="number"
+        className="w-24"
+        placeholder="0"
+        value={row.quantity_per_budin}
+        onChange={e => onUpdate(row.key, 'quantity_per_budin', e.target.value)}
+      />
+      {ing && (
+        <Badge variant="secondary" className="w-14 justify-center shrink-0">
+          {ing.unit}
+        </Badge>
+      )}
+      <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => onRemove(row.key)}>
+        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+      </Button>
     </div>
   )
 }

@@ -1,184 +1,204 @@
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { useSearchParams } from 'react-router-dom'
-import { useIngredients, useUpdateIngredient, useCalculator } from '../hooks/useIngredients'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Input } from '@/components/ui/input'
+import { useIngredients, useCreateIngredient, useUpdateIngredient, useDeleteIngredient } from '../hooks/useIngredients'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { Ingredient } from '../types'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
+import type { Ingredient, Unit } from '../types'
+
+const UNITS: Unit[] = ['kg', 'g', 'L', 'ml', 'unidad']
+
+interface IngredientForm {
+  name: string
+  unit: Unit
+  price_per_unit: string
+}
+
+const emptyForm: IngredientForm = { name: '', unit: 'kg', price_per_unit: '' }
 
 export default function Ingredientes() {
-  const [params, setParams] = useSearchParams()
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const date = params.get('date') || today
+  const { data: ingredients = [], isLoading } = useIngredients()
+  const createIngredient = useCreateIngredient()
+  const updateIngredient = useUpdateIngredient()
+  const deleteIngredient = useDeleteIngredient()
+
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [editing, setEditing] = useState<Ingredient | null>(null)
+  const [form, setForm] = useState<IngredientForm>(emptyForm)
+  const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null)
+
+  function openCreate() {
+    setEditing(null)
+    setForm(emptyForm)
+    setSheetOpen(true)
+  }
+
+  function openEdit(ingredient: Ingredient) {
+    setEditing(ingredient)
+    setForm({
+      name: ingredient.name,
+      unit: ingredient.unit,
+      price_per_unit: ingredient.price_per_unit,
+    })
+    setSheetOpen(true)
+  }
+
+  async function handleSave() {
+    if (!form.name || !form.unit) return
+    if (editing) {
+      await updateIngredient.mutateAsync({ id: editing.id, ...form })
+    } else {
+      await createIngredient.mutateAsync(form)
+    }
+    setSheetOpen(false)
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    await deleteIngredient.mutateAsync(deleteTarget.id)
+    setDeleteTarget(null)
+  }
+
+  const isSaving = createIngredient.isPending || updateIngredient.isPending
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-foreground">Ingredientes</h1>
-      <Tabs defaultValue="calculadora">
-        <TabsList>
-          <TabsTrigger value="calculadora">Calculadora</TabsTrigger>
-          <TabsTrigger value="precios">Precios</TabsTrigger>
-        </TabsList>
-        <TabsContent value="calculadora" className="mt-4">
-          <CalculadoraTab date={date} onDateChange={d => setParams({ date: d })} />
-        </TabsContent>
-        <TabsContent value="precios" className="mt-4">
-          <PreciosTab />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
-
-function CalculadoraTab({ date, onDateChange }: { date: string; onDateChange: (d: string) => void }) {
-  const { data, isLoading } = useCalculator(date)
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Fecha:</span>
-        <Input type="date" value={date} onChange={e => onDateChange(e.target.value)} className="w-40" />
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-foreground">Ingredientes</h1>
+        <Button size="sm" onClick={openCreate} className="cursor-pointer">
+          <Plus className="w-4 h-4 mr-1" /> Nuevo ingrediente
+        </Button>
       </div>
 
-      {isLoading && <div className="text-muted-foreground">Calculando...</div>}
+      {isLoading && <div className="text-muted-foreground">Cargando...</div>}
 
-      {data && (
-        <>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Costo total', value: data.financials.totalCost, color: 'text-red-400' },
-              { label: 'Venta total', value: data.financials.totalSales, color: 'text-sky-400' },
-              { label: 'Ganancia', value: data.financials.profit, color: data.financials.profit >= 0 ? 'text-emerald-400' : 'text-red-400' },
-            ].map(({ label, value, color }) => (
-              <Card key={label}>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className={`text-lg font-bold ${color}`}>
-                    ${value.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {data.totals.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Total ingredientes</CardTitle></CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ingrediente</TableHead>
-                      <TableHead>Cantidad</TableHead>
-                      <TableHead>Costo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.totals.map(t => (
-                      <TableRow key={t.id}>
-                        <TableCell>{t.name}</TableCell>
-                        <TableCell>{t.totalQuantity.toLocaleString('es-AR')} {t.unit}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          ${t.totalCost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-
-          {data.byFlavor.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-foreground">Desglose por sabor</h2>
-              {data.byFlavor.map(flavor => (
-                <Card key={flavor.flavorId}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
-                      {flavor.flavorName} <span className="font-normal text-muted-foreground">×{flavor.budinCount}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableBody>
-                        {flavor.ingredients.map(ing => (
-                          <TableRow key={ing.id}>
-                            <TableCell className="text-sm">{ing.name}</TableCell>
-                            <TableCell className="text-sm">{ing.totalQuantity.toLocaleString('es-AR')} {ing.unit}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {data.totals.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Sin datos para esta fecha. Asegurate de tener recetas cargadas.
-            </div>
-          )}
-        </>
+      {!isLoading && ingredients.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          Sin ingredientes. Agregá el primero.
+        </div>
       )}
-    </div>
-  )
-}
 
-function PreciosTab() {
-  const { data: ingredients = [], isLoading } = useIngredients()
-  const updateIngredient = useUpdateIngredient()
-  const [prices, setPrices] = useState<Record<string, string>>({})
+      {ingredients.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Unidad</TableHead>
+              <TableHead>Precio / unidad</TableHead>
+              <TableHead className="w-20"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ingredients.map(ing => (
+              <TableRow key={ing.id}>
+                <TableCell className="font-medium">{ing.name}</TableCell>
+                <TableCell className="text-muted-foreground">{ing.unit}</TableCell>
+                <TableCell>
+                  {ing.price_per_unit && parseFloat(ing.price_per_unit) > 0
+                    ? `$${parseFloat(ing.price_per_unit).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
+                    : <span className="text-muted-foreground">—</span>
+                  }
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => openEdit(ing)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => setDeleteTarget(ing)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
-  function handleSave(ingredient: Ingredient) {
-    const newPrice = prices[ingredient.id]
-    if (!newPrice) return
-    updateIngredient.mutate({ id: ingredient.id, price_per_unit: newPrice as unknown as string })
-  }
+      {/* Sheet add/edit */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>{editing ? 'Editar ingrediente' : 'Nuevo ingrediente'}</SheetTitle>
+          </SheetHeader>
 
-  if (isLoading) return <div className="text-muted-foreground">Cargando...</div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1">
+              <Label>Nombre</Label>
+              <Input
+                placeholder="Harina 000"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              />
+            </div>
 
-  if (ingredients.length === 0) {
-    return <div className="text-center py-12 text-muted-foreground">Sin ingredientes cargados. Se cargan desde las recetas.</div>
-  }
+            <div className="space-y-1">
+              <Label>Unidad</Label>
+              <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v as Unit }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNITS.map(u => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Ingrediente</TableHead>
-          <TableHead>Unidad</TableHead>
-          <TableHead>Precio por unidad ($)</TableHead>
-          <TableHead></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {ingredients.map(ing => (
-          <TableRow key={ing.id}>
-            <TableCell>{ing.name}</TableCell>
-            <TableCell>{ing.unit}</TableCell>
-            <TableCell>
+            <div className="space-y-1">
+              <Label>
+                Precio por unidad <span className="text-muted-foreground text-xs">(opcional)</span>
+              </Label>
               <Input
                 type="number"
                 step="0.01"
-                defaultValue={ing.price_per_unit}
-                className="w-32"
-                onChange={e => setPrices(p => ({ ...p, [ing.id]: e.target.value }))}
+                placeholder="0.00"
+                value={form.price_per_unit}
+                onChange={e => setForm(f => ({ ...f, price_per_unit: e.target.value }))}
               />
-            </TableCell>
-            <TableCell>
-              <Button size="sm" variant="outline" onClick={() => handleSave(ing)}>
-                Guardar
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </div>
+          </div>
+
+          <SheetFooter className="gap-2">
+            <Button variant="outline" className="cursor-pointer" onClick={() => setSheetOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={handleSave}
+              disabled={!form.name || isSaving}
+            >
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar ingrediente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }
