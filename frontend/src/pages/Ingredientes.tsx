@@ -177,7 +177,7 @@ export default function Ingredientes() {
                       : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {unitPrice !== null && !sameUnit
+                    {unitPrice !== null
                       ? `$${unitPrice.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}/${baseUnit}`
                       : <span className="text-muted-foreground">—</span>}
                   </TableCell>
