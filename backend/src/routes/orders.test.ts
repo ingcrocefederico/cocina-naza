@@ -110,3 +110,49 @@ describe('DELETE /api/orders/:id', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('GET /api/orders/counts', () => {
+  beforeEach(() => mockQuery.mockReset())
+
+  it('requires auth', async () => {
+    const res = await request(makeApp()).get('/api/orders/counts?month=2026-04')
+    expect(res.status).toBe(401)
+  })
+
+  it('requires month param', async () => {
+    const res = await request(makeApp())
+      .get('/api/orders/counts')
+      .set('Cookie', authCookie())
+    expect(res.status).toBe(400)
+  })
+
+  it('returns counts keyed by date', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { date: '2026-04-26', count: 3 },
+        { date: '2026-04-27', count: 1 },
+      ],
+    })
+    const res = await request(makeApp())
+      .get('/api/orders/counts?month=2026-04')
+      .set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ '2026-04-26': 3, '2026-04-27': 1 })
+  })
+
+  it('returns empty object when no orders', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] })
+    const res = await request(makeApp())
+      .get('/api/orders/counts?month=2026-04')
+      .set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({})
+  })
+
+  it('returns 400 for invalid month format', async () => {
+    const res = await request(makeApp())
+      .get('/api/orders/counts?month=2026-4')
+      .set('Cookie', authCookie())
+    expect(res.status).toBe(400)
+  })
+})

@@ -46,6 +46,26 @@ ordersRouter.get('/', async (req, res) => {
   res.json(ordersWithItems)
 })
 
+ordersRouter.get('/counts', async (req, res) => {
+  const month = req.query.month as string | undefined
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    res.status(400).json({ error: 'month query param required (YYYY-MM)' })
+    return
+  }
+  const result = await query<{ date: string; count: number }>(
+    `SELECT date::text AS date, COUNT(*)::int AS count
+     FROM orders
+     WHERE date >= ($1 || '-01')::date AND date < ($1 || '-01')::date + INTERVAL '1 month'
+     GROUP BY date`,
+    [month]
+  )
+  const counts: Record<string, number> = {}
+  for (const row of result.rows) {
+    counts[row.date] = row.count
+  }
+  res.json(counts)
+})
+
 ordersRouter.post('/', async (req, res) => {
   const { client_name, address, date, status = 'pedido', sale_price, notes, items = [] } = req.body as {
     client_name?: string; address?: string; date?: string; status?: string;
