@@ -33,6 +33,14 @@ export function useOrders(date: string) {
   })
 }
 
+export function useOrderCounts(month: string) {
+  return useQuery<Record<string, number>>({
+    queryKey: ['order-counts', month],
+    queryFn: async () => (await api.get(`/api/orders/counts?month=${month}`)).data,
+    enabled: !!month,
+  })
+}
+
 export function useCalculator(date: string) {
   return useQuery<CalculatorResult>({
     queryKey: ['calculator', date],
@@ -45,8 +53,10 @@ export function useCreateOrder() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateOrderInput) => api.post<Order>('/api/orders', data),
-    onSuccess: (_data, vars) =>
-      qc.invalidateQueries({ queryKey: ['orders', vars.date] }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['orders', vars.date] })
+      qc.invalidateQueries({ queryKey: ['order-counts'] })
+    },
   })
 }
 
@@ -55,7 +65,10 @@ export function useUpdateOrder() {
   return useMutation({
     mutationFn: ({ id, ...data }: UpdateOrderInput) =>
       api.put<Order>(`/api/orders/${id}`, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] })
+      qc.invalidateQueries({ queryKey: ['order-counts'] })
+    },
   })
 }
 
@@ -63,6 +76,9 @@ export function useDeleteOrder() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.delete(`/api/orders/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] })
+      qc.invalidateQueries({ queryKey: ['order-counts'] })
+    },
   })
 }
