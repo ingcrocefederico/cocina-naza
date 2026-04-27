@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { ShoppingBag, Palette, FlaskConical, LogOut } from 'lucide-react'
+import PWAInstallPrompt from './PWAInstallPrompt'
 
 const navItems = [
   { to: '/pedidos', label: 'Pedidos', icon: ShoppingBag },
@@ -62,6 +63,8 @@ export default function Layout() {
           ))}
         </div>
       </nav>
+
+      <PWAInstallPrompt />
     </div>
   )
 }
