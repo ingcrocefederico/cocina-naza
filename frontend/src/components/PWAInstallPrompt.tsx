@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Share, X } from 'lucide-react'
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
+import { onInstallPromptReady, triggerInstall } from '@/lib/pwaInstall'
 
 const DISMISSED_KEY = 'pwa-install-dismissed'
 
@@ -23,7 +19,6 @@ function isIOS() {
 
 export default function PWAInstallPrompt() {
   const [open, setOpen] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const ios = isIOS()
 
   useEffect(() => {
@@ -35,13 +30,9 @@ export default function PWAInstallPrompt() {
       return () => clearTimeout(timer)
     }
 
-    function handler(e: Event) {
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setOpen(true)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+    // Chrome/Android: event may have already fired before component mounted
+    const unsub = onInstallPromptReady(() => setOpen(true))
+    return unsub
   }, [ios])
 
   function dismiss() {
@@ -50,9 +41,7 @@ export default function PWAInstallPrompt() {
   }
 
   async function install() {
-    if (!deferredPrompt) return
-    await deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
+    const outcome = await triggerInstall()
     if (outcome === 'accepted') sessionStorage.setItem(DISMISSED_KEY, '1')
     setOpen(false)
   }
@@ -62,7 +51,6 @@ export default function PWAInstallPrompt() {
       <SheetContent side="bottom" className="flex flex-col gap-0 p-0 rounded-t-2xl">
         <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-muted-foreground/25 shrink-0" />
 
-        {/* Close */}
         <button
           type="button"
           onClick={dismiss}
@@ -73,7 +61,6 @@ export default function PWAInstallPrompt() {
         </button>
 
         <div className="px-6 pt-5 pb-8 flex flex-col items-center gap-4 text-center">
-          {/* Icon */}
           <img
             src="/pwa-192x192.png"
             alt="Cocina Naza"
