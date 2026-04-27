@@ -11,6 +11,7 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  components: extraComponents,
   ...props
 }: CalendarProps) {
   return (
@@ -57,6 +58,7 @@ function Calendar({
           ) : (
             <ChevronRight className="h-4 w-4" />
           ),
+        ...extraComponents,
       }}
       {...props}
     />
