@@ -264,7 +264,7 @@ export default function Sabores() {
       </Tabs>
 
       {/* Sheet editar / crear sabor */}
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null) }}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
           <SheetHeader className="px-6 pt-6 pb-4">
             <SheetTitle>{editing ? 'Editar sabor' : 'Nuevo sabor'}</SheetTitle>
