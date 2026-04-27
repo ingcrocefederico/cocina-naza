@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useOrders, useUpdateOrder, useDeleteOrder, useCalculator } from '../hooks/useOrders'
+import { useOrders, useUpdateOrder, useDeleteOrder, useCalculator, useOrderCounts } from '../hooks/useOrders'
 import StatusBadge from '../components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,8 @@ export default function Pedidos() {
   const [params, setParams] = useSearchParams()
   const today = format(new Date(), 'yyyy-MM-dd')
   const date = params.get('date') || today
+  const [visibleMonth, setVisibleMonth] = useState(() => format(new Date(), 'yyyy-MM'))
+  const { data: orderCounts = {} } = useOrderCounts(visibleMonth)
 
   const { data: orders = [], isLoading } = useOrders(date)
   const updateOrder = useUpdateOrder()
@@ -65,7 +67,13 @@ export default function Pedidos() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold text-foreground">Pedidos</h1>
-          <DatePicker value={date} onChange={setDate} className="w-40" />
+          <DatePicker
+            value={date}
+            onChange={setDate}
+            counts={orderCounts}
+            onMonthChange={setVisibleMonth}
+            className="w-40"
+          />
         </div>
         <div className="flex items-center gap-2">
           <Button

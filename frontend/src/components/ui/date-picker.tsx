@@ -30,20 +30,15 @@ export function DatePicker({ value, onChange, onMonthChange, counts = {}, classN
   }
 
   const DayButton = React.useCallback(
-    ({ day, children, ...buttonProps }: DayButtonProps) => {
+    ({ day, modifiers, children, ...buttonProps }: DayButtonProps) => {
       const dateStr = format(day.date, "yyyy-MM-dd")
-      const count = counts[dateStr] ?? 0
+      const hasOrders = (counts[dateStr] ?? 0) > 0 && !modifiers.selected && !modifiers.today
       return (
         <button
           {...buttonProps}
-          className={cn(buttonProps.className, count > 0 && "flex-col h-auto py-0.5")}
+          className={cn(buttonProps.className, hasOrders && "text-primary font-semibold")}
         >
-          <span className="block leading-none">{children}</span>
-          {count > 0 && (
-            <span className="block text-[9px] font-bold text-primary leading-none mt-0.5">
-              {count}
-            </span>
-          )}
+          {children}
         </button>
       )
     },
