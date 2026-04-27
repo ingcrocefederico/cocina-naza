@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'cocinaLogo.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Cocina Naza',
-        short_name: 'Cocina Naza',
+        name: 'Sabor & Amor',
+        short_name: 'Sabor & Amor',
         description: 'Gestión de pedidos y recetas de budines',
         theme_color: '#1a1006',
         background_color: '#1a1006',
@@ -20,6 +20,11 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         icons: [
+          {
+            src: 'cocinaLogo.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+          },
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',

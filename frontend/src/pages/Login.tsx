@@ -16,11 +16,12 @@ export default function Login() {
   return (
     <div className="flex h-screen items-center justify-center bg-background">
       <div className="text-center space-y-6 px-8">
+        <img src="/cocinaLogo.svg" alt="Sabor & Amor" className="w-28 h-28 mx-auto" />
         <div
           className="text-7xl font-bold text-primary leading-none"
           style={{ fontFamily: "'Amatic SC', cursive" }}
         >
-          Cocina Naza
+          Sabor &amp; Amor
         </div>
         <p className="text-muted-foreground text-sm tracking-wider uppercase">
           Gestión de pedidos

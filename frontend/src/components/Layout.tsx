@@ -17,12 +17,15 @@ export default function Layout() {
   return (
     <div className="h-dvh bg-background flex flex-col overflow-hidden">
       <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between shrink-0 z-40">
-        <span
-          className="font-bold text-primary text-2xl tracking-wide"
-          style={{ fontFamily: "'Amatic SC', cursive" }}
-        >
-          Cocina Naza
-        </span>
+        <div className="flex items-center gap-2">
+          <img src="/cocinaLogo.svg" alt="" className="w-8 h-8" />
+          <span
+            className="font-bold text-primary text-2xl tracking-wide"
+            style={{ fontFamily: "'Amatic SC', cursive" }}
+          >
+            Sabor &amp; Amor
+          </span>
+        </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="max-w-[140px] truncate">{user?.name}</span>
           <Button
