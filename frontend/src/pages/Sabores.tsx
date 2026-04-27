@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -49,6 +50,8 @@ export default function Sabores() {
   const [form, setForm] = useState<FlavorForm>(emptyForm)
   const [activeRowKey, setActiveRowKey] = useState<number | null>(null)
   const [rows, setRows] = useState<RecipeRow[]>([])
+
+  const [deleteTarget, setDeleteTarget] = useState<Flavor | null>(null)
 
   const [recipeFlavorId, setRecipeFlavorId] = useState<string | null>(null)
   const [recipeOpen, setRecipeOpen] = useState(false)
@@ -184,7 +187,7 @@ export default function Sabores() {
                     variant="ghost"
                     size="sm"
                     className="cursor-pointer"
-                    onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
+                    onClick={e => { e.stopPropagation(); setDeleteTarget(flavor) }}
                   >
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </Button>
@@ -247,7 +250,7 @@ export default function Sabores() {
                         variant="ghost"
                         size="sm"
                         className="cursor-pointer"
-                        onClick={e => { e.stopPropagation(); deleteFlavor.mutate(flavor.id) }}
+                        onClick={e => { e.stopPropagation(); setDeleteTarget(flavor) }}
                       >
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
@@ -445,6 +448,26 @@ export default function Sabores() {
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar sabor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { deleteFlavor.mutate(deleteTarget!.id); setDeleteTarget(null) }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

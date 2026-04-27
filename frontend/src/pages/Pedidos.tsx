@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown } from 'lucide-react'
 import type { Order, OrderStatus } from '../types'
 
@@ -35,6 +36,8 @@ export default function Pedidos() {
   const deleteOrder = useDeleteOrder()
   const navigate = useNavigate()
 
+
+  const [deleteTarget, setDeleteTarget] = useState<Order | null>(null)
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetView, setSheetView] = useState<SheetView>('total')
@@ -168,7 +171,7 @@ export default function Pedidos() {
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => navigate(`/pedidos/${order.id}?date=${date}`)}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => deleteOrder.mutate(order.id)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => setDeleteTarget(order)}>
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </Button>
                 </div>
@@ -285,6 +288,26 @@ export default function Pedidos() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará el pedido de <strong>{deleteTarget?.customer_name}</strong>. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { deleteOrder.mutate(deleteTarget!.id); setDeleteTarget(null) }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
