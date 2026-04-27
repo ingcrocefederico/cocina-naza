@@ -10,33 +10,56 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calculator, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Ingredient, Unit } from '../types'
 
-const UNITS: Unit[] = ['kg', 'g', 'L', 'ml', 'unidad']
+// Price units the user can select when entering a purchase price
+const PRICE_UNITS = ['kg', 'g', 'L', 'ml', 'uni'] as const
+type PriceUnit = typeof PRICE_UNITS[number]
 
-function formatUnit(unit: string): string {
+// How each price unit maps to the recipe unit stored in DB, and the conversion factor
+const PRICE_UNIT_MAP: Record<PriceUnit, { recipe_unit: Unit; factor: number }> = {
+  kg:  { recipe_unit: 'g',      factor: 1000 },
+  g:   { recipe_unit: 'g',      factor: 1    },
+  L:   { recipe_unit: 'ml',     factor: 1000 },
+  ml:  { recipe_unit: 'ml',     factor: 1    },
+  uni: { recipe_unit: 'unidad', factor: 1    },
+}
+
+// When editing, pick the natural bulk price unit for a given recipe unit
+function defaultPriceUnit(unit: Unit): PriceUnit {
+  if (unit === 'g')      return 'kg'
+  if (unit === 'ml')     return 'L'
+  if (unit === 'kg')     return 'kg'
+  if (unit === 'L')      return 'L'
+  return 'uni'
+}
+
+// For table display: always show bulk (kg/L) perspective for g/ml ingredients
+const TABLE_BULK: Record<string, { bulk_unit: string; factor: number }> = {
+  g:      { bulk_unit: 'kg', factor: 1000 },
+  ml:     { bulk_unit: 'L',  factor: 1000 },
+  kg:     { bulk_unit: 'kg', factor: 1    },
+  L:      { bulk_unit: 'L',  factor: 1    },
+  unidad: { bulk_unit: 'uni', factor: 1   },
+}
+
+function formatBaseUnit(unit: string): string {
   return unit === 'unidad' ? 'uni' : unit
 }
 
 const CALC_TARGETS: Record<string, string[]> = {
-  kg: ['g'],
-  g: ['kg'],
-  L: ['ml'],
-  ml: ['L'],
+  kg: ['g'], g: ['kg'], L: ['ml'], ml: ['L'],
 }
 
 const CONVERSION_FACTOR: Record<string, number> = {
-  'kg->g':  0.001,
-  'g->kg':  1000,
-  'L->ml':  0.001,
-  'ml->L':  1000,
+  'kg->g': 0.001, 'g->kg': 1000, 'L->ml': 0.001, 'ml->L': 1000,
 }
 
 interface IngredientForm {
   name: string
-  unit: Unit
-  price_per_unit: string
+  price_unit: PriceUnit
+  bulk_price: string
 }
 
-const emptyForm: IngredientForm = { name: '', unit: 'kg', price_per_unit: '' }
+const emptyForm: IngredientForm = { name: '', price_unit: 'kg', bulk_price: '' }
 
 export default function Ingredientes() {
   const { data: ingredients = [], isLoading } = useIngredients()
@@ -75,20 +98,23 @@ export default function Ingredientes() {
 
   function openEdit(ingredient: Ingredient) {
     setEditing(ingredient)
-    setForm({
-      name: ingredient.name,
-      unit: ingredient.unit,
-      price_per_unit: ingredient.price_per_unit,
-    })
+    const price_unit = defaultPriceUnit(ingredient.unit)
+    const { factor } = PRICE_UNIT_MAP[price_unit]
+    const p = parseFloat(ingredient.price_per_unit)
+    const bulk_price = p > 0 ? String(Math.round(p * factor)) : ''
+    setForm({ name: ingredient.name, price_unit, bulk_price })
     setSheetOpen(true)
   }
 
   async function handleSave() {
-    if (!form.name || !form.unit) return
+    if (!form.name) return
+    const { recipe_unit, factor } = PRICE_UNIT_MAP[form.price_unit]
+    const p = parseFloat(form.bulk_price)
+    const price_per_unit = p > 0 ? String(p / factor) : ''
     if (editing) {
-      await updateIngredient.mutateAsync({ id: editing.id, ...form })
+      await updateIngredient.mutateAsync({ id: editing.id, name: form.name, unit: recipe_unit, price_per_unit })
     } else {
-      await createIngredient.mutateAsync(form)
+      await createIngredient.mutateAsync({ name: form.name, unit: recipe_unit, price_per_unit })
     }
     setSheetOpen(false)
   }
@@ -128,34 +154,46 @@ export default function Ingredientes() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead>Unidad</TableHead>
-              <TableHead>Precio / unidad</TableHead>
+              <TableHead>Precio compra</TableHead>
+              <TableHead>Precio receta</TableHead>
               <TableHead className="w-20"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {ingredients.map(ing => (
-              <TableRow key={ing.id}>
-                <TableCell className="font-medium">{ing.name}</TableCell>
-                <TableCell className="text-muted-foreground">{formatUnit(ing.unit)}</TableCell>
-                <TableCell>
-                  {ing.price_per_unit && parseFloat(ing.price_per_unit) > 0
-                    ? `$${parseFloat(ing.price_per_unit).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
-                    : <span className="text-muted-foreground">—</span>
-                  }
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => openEdit(ing)}>
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => setDeleteTarget(ing)}>
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {ingredients.map(ing => {
+              const hasPrice = ing.price_per_unit && parseFloat(ing.price_per_unit) > 0
+              const { bulk_unit, factor } = TABLE_BULK[ing.unit] ?? { bulk_unit: ing.unit, factor: 1 }
+              const baseUnit = formatBaseUnit(ing.unit)
+              const unitPrice = hasPrice ? parseFloat(ing.price_per_unit) : null
+              const bulkPrice = unitPrice !== null ? unitPrice * factor : null
+              const sameUnit = bulk_unit === baseUnit
+
+              return (
+                <TableRow key={ing.id}>
+                  <TableCell className="font-medium">{ing.name}</TableCell>
+                  <TableCell>
+                    {bulkPrice !== null
+                      ? `$${bulkPrice.toLocaleString('es-AR', { maximumFractionDigits: 0 })}/${bulk_unit}`
+                      : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {unitPrice !== null && !sameUnit
+                      ? `$${unitPrice.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}/${baseUnit}`
+                      : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => openEdit(ing)}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => setDeleteTarget(ing)}>
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       )}
@@ -169,7 +207,6 @@ export default function Ingredientes() {
           </SheetHeader>
 
           <div className="px-5 pb-8 space-y-5">
-            {/* Entrada */}
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">Precio de compra</Label>
               <div className="flex gap-2">
@@ -194,7 +231,6 @@ export default function Ingredientes() {
               </div>
             </div>
 
-            {/* Resultado */}
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">Equivale a</Label>
               <div className="flex gap-2 items-center">
@@ -234,26 +270,52 @@ export default function Ingredientes() {
             </div>
 
             <div className="space-y-1">
-              <Label>Unidad</Label>
-              <SelectSheet
-                value={form.unit}
-                onValueChange={v => setForm(f => ({ ...f, unit: v as Unit }))}
-                options={UNITS.map(u => ({ value: u, label: formatUnit(u) }))}
-                title="Unidad"
-              />
-            </div>
-
-            <div className="space-y-1">
               <Label>
-                Precio por unidad <span className="text-muted-foreground text-xs">(opcional)</span>
+                Precio de compra <span className="text-muted-foreground text-xs">(opcional)</span>
               </Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={form.price_per_unit}
-                onChange={e => setForm(f => ({ ...f, price_per_unit: e.target.value }))}
-              />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={
+                      form.bulk_price
+                        ? parseFloat(form.bulk_price).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+                        : ''
+                    }
+                    onChange={e => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '')
+                      setForm(f => ({ ...f, bulk_price: raw }))
+                    }}
+                    className="pl-7"
+                  />
+                </div>
+                <SelectSheet
+                  value={form.price_unit}
+                  onValueChange={v => setForm(f => ({ ...f, price_unit: v as PriceUnit, bulk_price: '' }))}
+                  options={PRICE_UNITS.map(u => ({ value: u, label: u }))}
+                  title="Unidad de compra"
+                  className="w-24 shrink-0"
+                />
+              </div>
+              {(() => {
+                const { recipe_unit, factor } = PRICE_UNIT_MAP[form.price_unit]
+                const p = parseFloat(form.bulk_price)
+                const recipeUnit = formatBaseUnit(recipe_unit)
+                if (!form.bulk_price || isNaN(p) || p <= 0 || factor === 1) return null
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    Unidad en recetas: {recipeUnit} — ${(p / factor).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}/{recipeUnit}
+                  </p>
+                )
+              })()}
+              {PRICE_UNIT_MAP[form.price_unit].factor === 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Unidad en recetas: {formatBaseUnit(PRICE_UNIT_MAP[form.price_unit].recipe_unit)}
+                </p>
+              )}
             </div>
           </div>
 

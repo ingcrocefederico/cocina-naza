@@ -1,0 +1,4 @@
+{"type":"server-started","port":55267,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:55267","screen_dir":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/51330-1777298800/content","state_dir":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/51330-1777298800/state"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/51330-1777298800/content/icon-options.html"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/51330-1777298800/content/icon-v2.html"}
+{"type":"server-stopped","reason":"idle timeout"}

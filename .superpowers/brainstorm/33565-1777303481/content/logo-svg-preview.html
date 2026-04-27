@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #150d06; color: #F5EDE0; font-family: sans-serif; padding: 40px 24px; min-height: 100vh; }
+  h2 { text-align: center; font-size: 20px; margin-bottom: 6px; }
+  .sub { color: #C4A882; font-size: 13px; text-align: center; margin-bottom: 36px; }
+
+  .row { display: flex; gap: 20px; justify-content: center; align-items: flex-end; flex-wrap: wrap; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .item span { font-size: 11px; color: #6a5038; font-family: monospace; }
+  .bg { background: #3D2B1F; display: flex; align-items: center; justify-content: center; }
+
+  .note { text-align: center; font-size: 12px; color: #7a6048; margin-top: 28px; }
+</style>
+</head>
+<body>
+
+<h2>cocinaLogo.svg — preview</h2>
+<p class="sub">El logo convertido a SVG, en colores de la marca</p>
+
+<div class="row">
+
+  <div class="item">
+    <div class="bg" style="width:280px;height:280px;border-radius:40px;">
+      <img src="/frontend/public/cocinaLogo.svg" width="240" height="240"/>
+    </div>
+    <span>512px (grande)</span>
+  </div>
+
+  <div class="item">
+    <div class="bg" style="width:120px;height:120px;border-radius:22px;">
+      <img src="/frontend/public/cocinaLogo.svg" width="104" height="104"/>
+    </div>
+    <span>192px</span>
+  </div>
+
+  <div class="item">
+    <div class="bg" style="width:80px;height:80px;border-radius:15px;">
+      <img src="/frontend/public/cocinaLogo.svg" width="68" height="68"/>
+    </div>
+    <span>96px</span>
+  </div>
+
+  <div class="item">
+    <div class="bg" style="width:48px;height:48px;border-radius:10px;">
+      <img src="/frontend/public/cocinaLogo.svg" width="40" height="40"/>
+    </div>
+    <span>48px</span>
+  </div>
+
+  <div class="item">
+    <div class="bg" style="width:32px;height:32px;border-radius:7px;">
+      <img src="/frontend/public/cocinaLogo.svg" width="26" height="26"/>
+    </div>
+    <span>32px</span>
+  </div>
+
+</div>
+
+<!-- También inline SVG directo para garantizar render correcto -->
+<div style="display:flex;justify-content:center;margin-top:40px;gap:40px;align-items:center;">
+  <div>
+    <p style="text-align:center;font-size:11px;color:#7a6048;margin-bottom:8px;">inline SVG</p>
+    <div class="bg" style="width:200px;height:200px;border-radius:30px;padding:16px;">
+      <svg viewBox="0 0 500 500" fill="none" width="168" height="168">
+        <g transform="rotate(38, 250, 250)">
+          <ellipse cx="135" cy="248" rx="80" ry="120" fill="#D97706"/>
+          <path d="M 76 168 Q 135 153 194 168" stroke="#3D2B1F" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M 57 204 Q 135 189 213 204" stroke="#3D2B1F" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M 55 241 Q 135 226 215 241" stroke="#3D2B1F" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M 57 278 Q 135 263 213 278" stroke="#3D2B1F" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M 66 313 Q 135 298 204 313" stroke="#3D2B1F" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M 108 368 L 162 368 L 156 408 L 114 408 Z" fill="#D97706"/>
+          <path d="M 112 408 C 108 430 96 470 92 490 C 90 500 112 504 124 498 L 472 264 C 480 258 478 246 470 242 L 158 408 Z" fill="#D97706"/>
+          <path d="M 158 400 L 466 248" stroke="#F5EDE0" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+        </g>
+        <g transform="rotate(-48, 250, 250)">
+          <ellipse cx="38"  cy="250" rx="46" ry="27" fill="#D97706"/>
+          <rect    x="82"   y="231"  width="338" height="38" fill="#D97706"/>
+          <ellipse cx="464" cy="250" rx="46" ry="27" fill="#D97706"/>
+          <path d="M 86 237 L 416 237" stroke="#F5EDE0" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+          <ellipse cx="464" cy="241" rx="28" ry="9"  fill="#F5EDE0" opacity="0.4"/>
+          <ellipse cx="38"  cy="242" rx="26" ry="8"  fill="#F5EDE0" opacity="0.35"/>
+        </g>
+        <path d="M 256 74 C 256 69 247 59 237 63 C 227 67 227 80 237 91 L 256 112 L 275 91 C 285 80 285 67 275 63 C 265 59 256 69 256 74 Z" fill="#D97706"/>
+      </svg>
+    </div>
+  </div>
+
+  <div>
+    <p style="text-align:center;font-size:11px;color:#7a6048;margin-bottom:8px;">sobre fondo claro</p>
+    <div style="background:#F5EDE0;width:200px;height:200px;border-radius:30px;padding:16px;display:flex;align-items:center;justify-content:center;">
+      <svg viewBox="0 0 500 500" fill="none" width="168" height="168">
+        <g transform="rotate(38, 250, 250)">
+          <ellipse cx="135" cy="248" rx="80" ry="120" fill="#3D2B1F"/>
+          <path d="M 76 168 Q 135 153 194 168" stroke="#F5EDE0" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M 57 204 Q 135 189 213 204" stroke="#F5EDE0" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M 55 241 Q 135 226 215 241" stroke="#F5EDE0" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M 57 278 Q 135 263 213 278" stroke="#F5EDE0" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M 66 313 Q 135 298 204 313" stroke="#F5EDE0" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M 108 368 L 162 368 L 156 408 L 114 408 Z" fill="#3D2B1F"/>
+          <path d="M 112 408 C 108 430 96 470 92 490 C 90 500 112 504 124 498 L 472 264 C 480 258 478 246 470 242 L 158 408 Z" fill="#3D2B1F"/>
+        </g>
+        <g transform="rotate(-48, 250, 250)">
+          <ellipse cx="38"  cy="250" rx="46" ry="27" fill="#3D2B1F"/>
+          <rect    x="82"   y="231"  width="338" height="38" fill="#3D2B1F"/>
+          <ellipse cx="464" cy="250" rx="46" ry="27" fill="#3D2B1F"/>
+        </g>
+        <path d="M 256 74 C 256 69 247 59 237 63 C 227 67 227 80 237 91 L 256 112 L 275 91 C 285 80 285 67 275 63 C 265 59 256 69 256 74 Z" fill="#3D2B1F"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<p class="note">Guardado en frontend/public/cocinaLogo.svg — ¿ajustamos algo?</p>
+
+</body>
+</html>

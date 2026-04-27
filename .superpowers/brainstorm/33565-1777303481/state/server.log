@@ -1,0 +1,7 @@
+{"type":"server-started","port":64394,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:64394","screen_dir":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/content","state_dir":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/state"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/content/icon-v2.html"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/content/icon-logo.html"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/content/icon-final-a.html"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/content/icon-final-b.html"}
+{"type":"screen-added","file":"/Users/federicocroce/Documents/Naza/cocina/.superpowers/brainstorm/33565-1777303481/content/logo-svg-preview.html"}
+{"type":"server-stopped","reason":"owner process exited"}

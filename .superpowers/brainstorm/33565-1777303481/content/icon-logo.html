@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #150d06;
+    color: #F5EDE0;
+    font-family: 'Cabin', sans-serif;
+    padding: 32px 24px 60px;
+    min-height: 100vh;
+  }
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+  .sub { color: #C4A882; font-size: 13px; text-align: center; margin-bottom: 32px; }
+
+  .grid { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+
+  .card {
+    background: #1c1208;
+    border: 2px solid #3a2512;
+    border-radius: 14px;
+    padding: 24px 20px 18px;
+    width: 280px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    text-align: center;
+  }
+  .card:hover { border-color: #D97706; }
+  .card.selected { border-color: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,.35); }
+
+  .badge {
+    display: inline-block;
+    background: #3D2B1F;
+    color: #D97706;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  .previews { display: flex; gap: 12px; align-items: flex-end; justify-content: center; margin-bottom: 16px; }
+  .preview { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .preview span { font-size: 10px; color: #6a5038; font-family: monospace; }
+  .icon-bg {
+    background: #3D2B1F;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+  }
+
+  .name { font-size: 15px; font-weight: 700; color: #F5EDE0; margin-bottom: 4px; }
+  .desc { font-size: 12px; color: #C4A882; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h2>Naza — concepto logo/ícono</h2>
+<p class="sub">Script cursiva + toque de chef + herramienta de pastelería. Click para seleccionar.</p>
+
+<div class="grid">
+
+  <!-- ══ OPCIÓN A: Toque + Naza + Palo de amasar ══ -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="badge">A — Palo de amasar</div>
+    <div class="previews">
+
+      <!-- 512px concept (large) -->
+      <div class="preview">
+        <div class="icon-bg" style="width:160px;height:160px;border-radius:28px;">
+          <svg width="148" height="148" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- ROLLING PIN diagonal (lower layer) -->
+            <g transform="rotate(-25,100,130)">
+              <!-- left handle -->
+              <rect x="12" y="122" width="28" height="16" rx="8" fill="#C4A882"/>
+              <!-- main cylinder -->
+              <rect x="38" y="120" width="124" height="20" rx="10" fill="#C4A882"/>
+              <!-- cylinder shine -->
+              <rect x="38" y="122" width="124" height="6" rx="3" fill="#E0CEAD" opacity="0.6"/>
+              <!-- right handle -->
+              <rect x="160" y="122" width="28" height="16" rx="8" fill="#C4A882"/>
+            </g>
+
+            <!-- TOQUE (chef hat) -->
+            <!-- Band -->
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <!-- Pleat lines on band -->
+            <line x1="74" y1="98" x2="72" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.55"/>
+            <line x1="90" y1="97" x2="90" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.5"/>
+            <line x1="106" y1="97" x2="108" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.5"/>
+            <line x1="122" y1="98" x2="124" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.45"/>
+            <!-- Puff dome (overlapping circles) -->
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <!-- Puff highlights -->
+            <circle cx="88"  cy="56" r="10" fill="#E8A020" opacity="0.3"/>
+            <circle cx="114" cy="54" r="9"  fill="#E8A020" opacity="0.25"/>
+            <circle cx="100" cy="66" r="12" fill="#E8A020" opacity="0.2"/>
+            <!-- Outline separating puffs -->
+            <path d="M 76 98 Q 68 86 76 76 Q 84 66 80 60" stroke="#B36000" stroke-width="1.5" fill="none" opacity="0.35"/>
+            <path d="M 124 98 Q 132 86 124 76 Q 116 66 120 60" stroke="#B36000" stroke-width="1.5" fill="none" opacity="0.35"/>
+            <path d="M 90 96 Q 84 82 90 72" stroke="#B36000" stroke-width="1.5" fill="none" opacity="0.3"/>
+            <path d="M 110 96 Q 116 82 110 72" stroke="#B36000" stroke-width="1.5" fill="none" opacity="0.3"/>
+
+            <!-- "Naza" script text -->
+            <text x="100" y="175"
+              font-family="'Dancing Script', cursive"
+              font-size="58"
+              font-weight="700"
+              fill="#F5EDE0"
+              text-anchor="middle"
+              dominant-baseline="auto">Naza</text>
+          </svg>
+        </div>
+        <span>grande</span>
+      </div>
+
+      <!-- 96px -->
+      <div class="preview">
+        <div class="icon-bg" style="width:80px;height:80px;border-radius:17px;">
+          <svg width="72" height="72" viewBox="0 0 200 200" fill="none">
+            <g transform="rotate(-25,100,130)">
+              <rect x="12" y="122" width="28" height="16" rx="8" fill="#C4A882"/>
+              <rect x="38" y="120" width="124" height="20" rx="10" fill="#C4A882"/>
+              <rect x="160" y="122" width="28" height="16" rx="8" fill="#C4A882"/>
+            </g>
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <text x="100" y="175" font-family="'Dancing Script', cursive" font-size="58" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+          </svg>
+        </div>
+        <span>96px</span>
+      </div>
+
+      <!-- 48px -->
+      <div class="preview">
+        <div class="icon-bg" style="width:48px;height:48px;border-radius:10px;">
+          <svg width="42" height="42" viewBox="0 0 200 200" fill="none">
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <text x="100" y="178" font-family="'Dancing Script', cursive" font-size="60" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+          </svg>
+        </div>
+        <span>48px</span>
+      </div>
+    </div>
+    <div class="name">Toque + Naza + Palo de amasar</div>
+    <div class="desc">El palo de amasar diagonal cruza por detrás del toque — elemento 100% pastelería. Clásico como la referencia, con identidad Naza.</div>
+  </div>
+
+  <!-- ══ OPCIÓN B: Toque + Naza + Batidor ══ -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="badge">B — Batidor de globo</div>
+    <div class="previews">
+
+      <div class="preview">
+        <div class="icon-bg" style="width:160px;height:160px;border-radius:28px;">
+          <svg width="148" height="148" viewBox="0 0 200 200" fill="none">
+            <!-- WHISK (behind hat) -->
+            <g transform="rotate(20,100,100)">
+              <!-- Handle -->
+              <rect x="90" y="130" width="20" height="55" rx="10" fill="#C4A882"/>
+              <!-- Balloon wires -->
+              <path d="M 100 130 C 68 120 62 90 80 78" stroke="#C4A882" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 72 118 70 88 88 76" stroke="#C4A882" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 86 118 86 86 96 76" stroke="#C4A882" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 114 118 114 86 104 76" stroke="#C4A882" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 128 118 130 88 112 78" stroke="#C4A882" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 132 120 138 90 120 78" stroke="#C4A882" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <!-- Cross wire at widest point -->
+              <ellipse cx="100" cy="100" rx="22" ry="14" stroke="#C4A882" stroke-width="2.5" fill="none"/>
+            </g>
+
+            <!-- TOQUE -->
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <line x1="74" y1="98" x2="72" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.55"/>
+            <line x1="90" y1="97" x2="90" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.5"/>
+            <line x1="110" y1="97" x2="110" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.5"/>
+            <line x1="126" y1="98" x2="128" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.45"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <circle cx="88"  cy="56" r="10" fill="#E8A020" opacity="0.3"/>
+            <circle cx="114" cy="54" r="9"  fill="#E8A020" opacity="0.25"/>
+
+            <text x="100" y="175" font-family="'Dancing Script', cursive" font-size="58" font-weight="700" fill="#F5EDE0" text-anchor="middle" dominant-baseline="auto">Naza</text>
+          </svg>
+        </div>
+        <span>grande</span>
+      </div>
+
+      <div class="preview">
+        <div class="icon-bg" style="width:80px;height:80px;border-radius:17px;">
+          <svg width="72" height="72" viewBox="0 0 200 200" fill="none">
+            <g transform="rotate(20,100,100)">
+              <rect x="90" y="130" width="20" height="55" rx="10" fill="#C4A882"/>
+              <path d="M 100 130 C 68 120 62 90 80 78" stroke="#C4A882" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 72 118 70 88 88 76" stroke="#C4A882" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 96 118 96 86 100 76" stroke="#C4A882" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 128 118 130 88 112 78" stroke="#C4A882" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M 100 130 C 132 120 138 90 120 78" stroke="#C4A882" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <ellipse cx="100" cy="100" rx="22" ry="14" stroke="#C4A882" stroke-width="2.5" fill="none"/>
+            </g>
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <text x="100" y="175" font-family="'Dancing Script', cursive" font-size="58" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+          </svg>
+        </div>
+        <span>96px</span>
+      </div>
+
+      <div class="preview">
+        <div class="icon-bg" style="width:48px;height:48px;border-radius:10px;">
+          <svg width="42" height="42" viewBox="0 0 200 200" fill="none">
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <text x="100" y="178" font-family="'Dancing Script', cursive" font-size="60" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+          </svg>
+        </div>
+        <span>48px</span>
+      </div>
+    </div>
+    <div class="name">Toque + Naza + Batidor de globo</div>
+    <div class="desc">El batidor de globo (balloon whisk) sale por detrás del toque. Símbolo artesanal. Más refinado, menos obvio que el palo.</div>
+  </div>
+
+  <!-- ══ OPCIÓN C: Toque + Naza + Manga pastelera ══ -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="badge">C — Manga pastelera</div>
+    <div class="previews">
+
+      <div class="preview">
+        <div class="icon-bg" style="width:160px;height:160px;border-radius:28px;">
+          <svg width="148" height="148" viewBox="0 0 200 200" fill="none">
+            <!-- PIPING BAG diagonal (behind) -->
+            <g transform="rotate(30,100,140)">
+              <!-- Bag body -->
+              <path d="M 56 96 C 52 92 52 88 56 86 L 116 86 C 120 88 120 92 116 96 L 86 158 C 84 162 80 162 78 158 Z" fill="#C4A882" opacity="0.85"/>
+              <!-- Bag highlight -->
+              <path d="M 72 90 L 86 148" stroke="#E0CEAD" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+              <!-- Twisted top -->
+              <path d="M 56 88 C 56 78 68 74 86 76 C 104 74 116 78 116 88" fill="#B09070"/>
+              <!-- Nozzle -->
+              <path d="M 79 158 L 75 170 L 87 170 L 83 158 Z" fill="#A08060"/>
+              <!-- Star from nozzle -->
+              <path d="M 81 170 C 74 174 72 182 78 182 C 76 188 82 190 84 185 C 86 190 92 188 90 182 C 96 182 94 174 87 170 C 90 176 84 178 81 170 Z" fill="#F5EDE0" opacity="0.9"/>
+            </g>
+
+            <!-- TOQUE -->
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <line x1="74" y1="98" x2="72" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.55"/>
+            <line x1="90" y1="97" x2="90" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.5"/>
+            <line x1="110" y1="97" x2="110" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.5"/>
+            <line x1="126" y1="98" x2="128" y2="128" stroke="#B36000" stroke-width="1.5" opacity="0.45"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <circle cx="88"  cy="56" r="10" fill="#E8A020" opacity="0.3"/>
+            <circle cx="114" cy="54" r="9"  fill="#E8A020" opacity="0.25"/>
+
+            <text x="100" y="175" font-family="'Dancing Script', cursive" font-size="58" font-weight="700" fill="#F5EDE0" text-anchor="middle" dominant-baseline="auto">Naza</text>
+          </svg>
+        </div>
+        <span>grande</span>
+      </div>
+
+      <div class="preview">
+        <div class="icon-bg" style="width:80px;height:80px;border-radius:17px;">
+          <svg width="72" height="72" viewBox="0 0 200 200" fill="none">
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <text x="100" y="175" font-family="'Dancing Script', cursive" font-size="58" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+          </svg>
+        </div>
+        <span>96px</span>
+      </div>
+
+      <div class="preview">
+        <div class="icon-bg" style="width:48px;height:48px;border-radius:10px;">
+          <svg width="42" height="42" viewBox="0 0 200 200" fill="none">
+            <path d="M 54 118 Q 54 128 100 128 Q 146 128 146 118 L 146 106 Q 146 98 100 98 Q 54 98 54 106 Z" fill="#D97706"/>
+            <circle cx="100" cy="72" r="36" fill="#D97706"/>
+            <circle cx="78"  cy="82" r="26" fill="#D97706"/>
+            <circle cx="122" cy="82" r="26" fill="#D97706"/>
+            <circle cx="86"  cy="60" r="26" fill="#D97706"/>
+            <circle cx="116" cy="58" r="24" fill="#D97706"/>
+            <text x="100" y="178" font-family="'Dancing Script', cursive" font-size="60" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+          </svg>
+        </div>
+        <span>48px</span>
+      </div>
+    </div>
+    <div class="name">Toque + Naza + Manga pastelera</div>
+    <div class="desc">La manga pastelera es el ícono más específico de pastelería. Con roseta de crema saliendo — representa el producto terminado.</div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:28px;font-size:12px;color:#5a4030;">
+  Fondo #3D2B1F · Toque #D97706 · Texto #F5EDE0 · Herramienta #C4A882 — paleta Cocina Naza
+</p>
+
+<script>
+function toggleSelect(el) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (window.__sp_record) window.__sp_record({ type:'click', choice: el.dataset.choice, text: el.querySelector('.name').textContent });
+}
+</script>
+</body>
+</html>

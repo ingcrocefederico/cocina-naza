@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #150d06;
+    color: #F5EDE0;
+    font-family: sans-serif;
+    padding: 40px 24px 60px;
+    min-height: 100vh;
+  }
+  h2 { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+  .sub { color: #C4A882; font-size: 13px; text-align: center; margin-bottom: 36px; }
+
+  .main-preview {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+  .icon-bg {
+    background: #3D2B1F;
+    border-radius: 32px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .sizes-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 40px;
+  }
+  .size-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .size-item span { font-size: 11px; color: #6a5038; font-family: monospace; }
+
+  .note { text-align: center; font-size: 12px; color: #7a6048; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<h2>Toque + Naza + Palo de amasar</h2>
+<p class="sub">Vista principal y cómo se ve en cada tamaño de ícono de la app</p>
+
+<!-- LARGE PREVIEW -->
+<div class="main-preview">
+  <div class="icon-bg" style="width:240px;height:240px;">
+    <svg width="220" height="220" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- ROLLING PIN — diagonal, behind everything -->
+      <g transform="rotate(-22, 100, 135)">
+        <rect x="8"   y="124" width="24" height="14" rx="7" fill="#C4A882"/>
+        <rect x="30"  y="122" width="140" height="18" rx="9" fill="#C4A882"/>
+        <rect x="30"  y="123" width="140" height="6"  rx="3" fill="#E0CEAD" opacity="0.55"/>
+        <rect x="168" y="124" width="24" height="14" rx="7" fill="#C4A882"/>
+        <line x1="30" y1="131" x2="170" y2="131" stroke="#B09070" stroke-width="1" opacity="0.3"/>
+      </g>
+
+      <!-- TOQUE: band -->
+      <path d="M 52 118 Q 52 130 100 130 Q 148 130 148 118 L 148 104 Q 148 96 100 96 Q 52 96 52 104 Z" fill="#D97706"/>
+      <!-- Band pleats -->
+      <line x1="72"  y1="96"  x2="70"  y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.5"/>
+      <line x1="88"  y1="95"  x2="88"  y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.45"/>
+      <line x1="100" y1="95"  x2="100" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.4"/>
+      <line x1="112" y1="95"  x2="112" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.45"/>
+      <line x1="128" y1="96"  x2="130" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.5"/>
+
+      <!-- TOQUE: puffy dome -->
+      <circle cx="100" cy="70"  r="38" fill="#D97706"/>
+      <circle cx="76"  cy="82"  r="27" fill="#D97706"/>
+      <circle cx="124" cy="82"  r="27" fill="#D97706"/>
+      <circle cx="84"  cy="57"  r="28" fill="#D97706"/>
+      <circle cx="118" cy="55"  r="25" fill="#D97706"/>
+      <!-- Puff highlights -->
+      <circle cx="86"  cy="54"  r="11" fill="#F0B030" opacity="0.22"/>
+      <circle cx="116" cy="52"  r="9"  fill="#F0B030" opacity="0.18"/>
+      <circle cx="100" cy="64"  r="13" fill="#F0B030" opacity="0.15"/>
+      <!-- Puff crease lines -->
+      <path d="M 78 96 Q 68 82 76 70 Q 82 60 80 54" stroke="#A35500" stroke-width="1.5" fill="none" opacity="0.3"/>
+      <path d="M 122 96 Q 132 82 124 70 Q 118 60 120 54" stroke="#A35500" stroke-width="1.5" fill="none" opacity="0.3"/>
+      <path d="M 90 95 Q 86 80 90 68" stroke="#A35500" stroke-width="1.2" fill="none" opacity="0.25"/>
+      <path d="M 110 95 Q 114 80 110 68" stroke="#A35500" stroke-width="1.2" fill="none" opacity="0.25"/>
+
+      <!-- "Naza" script -->
+      <text
+        x="100" y="176"
+        font-family="'Dancing Script', cursive"
+        font-size="60"
+        font-weight="700"
+        fill="#F5EDE0"
+        text-anchor="middle"
+        dominant-baseline="auto">Naza</text>
+    </svg>
+  </div>
+</div>
+
+<!-- SIZES ROW -->
+<div class="sizes-row">
+
+  <!-- 192px (PWA) -->
+  <div class="size-item">
+    <div class="icon-bg" style="width:120px;height:120px;border-radius:24px;">
+      <svg width="108" height="108" viewBox="0 0 200 200" fill="none">
+        <g transform="rotate(-22,100,135)">
+          <rect x="8" y="124" width="24" height="14" rx="7" fill="#C4A882"/>
+          <rect x="30" y="122" width="140" height="18" rx="9" fill="#C4A882"/>
+          <rect x="30" y="123" width="140" height="6" rx="3" fill="#E0CEAD" opacity="0.55"/>
+          <rect x="168" y="124" width="24" height="14" rx="7" fill="#C4A882"/>
+        </g>
+        <path d="M 52 118 Q 52 130 100 130 Q 148 130 148 118 L 148 104 Q 148 96 100 96 Q 52 96 52 104 Z" fill="#D97706"/>
+        <line x1="72" y1="96" x2="70" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.5"/>
+        <line x1="88" y1="95" x2="88" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.45"/>
+        <line x1="112" y1="95" x2="112" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.45"/>
+        <line x1="128" y1="96" x2="130" y2="130" stroke="#A35500" stroke-width="1.5" opacity="0.5"/>
+        <circle cx="100" cy="70" r="38" fill="#D97706"/>
+        <circle cx="76" cy="82" r="27" fill="#D97706"/>
+        <circle cx="124" cy="82" r="27" fill="#D97706"/>
+        <circle cx="84" cy="57" r="28" fill="#D97706"/>
+        <circle cx="118" cy="55" r="25" fill="#D97706"/>
+        <text x="100" y="176" font-family="'Dancing Script', cursive" font-size="60" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+      </svg>
+    </div>
+    <span>192px</span>
+  </div>
+
+  <!-- 96px -->
+  <div class="size-item">
+    <div class="icon-bg" style="width:80px;height:80px;border-radius:17px;">
+      <svg width="70" height="70" viewBox="0 0 200 200" fill="none">
+        <g transform="rotate(-22,100,135)">
+          <rect x="8" y="124" width="24" height="14" rx="7" fill="#C4A882"/>
+          <rect x="30" y="122" width="140" height="18" rx="9" fill="#C4A882"/>
+          <rect x="168" y="124" width="24" height="14" rx="7" fill="#C4A882"/>
+        </g>
+        <path d="M 52 118 Q 52 130 100 130 Q 148 130 148 118 L 148 104 Q 148 96 100 96 Q 52 96 52 104 Z" fill="#D97706"/>
+        <circle cx="100" cy="70" r="38" fill="#D97706"/>
+        <circle cx="76" cy="82" r="27" fill="#D97706"/>
+        <circle cx="124" cy="82" r="27" fill="#D97706"/>
+        <circle cx="84" cy="57" r="28" fill="#D97706"/>
+        <circle cx="118" cy="55" r="25" fill="#D97706"/>
+        <text x="100" y="176" font-family="'Dancing Script', cursive" font-size="60" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+      </svg>
+    </div>
+    <span>96px</span>
+  </div>
+
+  <!-- 48px (favicon) -->
+  <div class="size-item">
+    <div class="icon-bg" style="width:48px;height:48px;border-radius:10px;">
+      <svg width="42" height="42" viewBox="0 0 200 200" fill="none">
+        <path d="M 52 118 Q 52 130 100 130 Q 148 130 148 118 L 148 104 Q 148 96 100 96 Q 52 96 52 104 Z" fill="#D97706"/>
+        <circle cx="100" cy="70" r="38" fill="#D97706"/>
+        <circle cx="76" cy="82" r="27" fill="#D97706"/>
+        <circle cx="124" cy="82" r="27" fill="#D97706"/>
+        <circle cx="84" cy="57" r="28" fill="#D97706"/>
+        <circle cx="118" cy="55" r="25" fill="#D97706"/>
+        <text x="100" y="178" font-family="'Dancing Script', cursive" font-size="60" font-weight="700" fill="#F5EDE0" text-anchor="middle">Naza</text>
+      </svg>
+    </div>
+    <span>48px</span>
+  </div>
+
+  <!-- 32px (browser tab) -->
+  <div class="size-item">
+    <div class="icon-bg" style="width:32px;height:32px;border-radius:7px;">
+      <svg width="28" height="28" viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="75" r="62" fill="#D97706"/>
+        <circle cx="100" cy="75" r="28" fill="#3D2B1F"/>
+        <text x="100" y="185" font-family="'Dancing Script', cursive" font-size="58" font-weight="700" fill="#F5EDE0" text-anchor="middle">N</text>
+      </svg>
+    </div>
+    <span>32px</span>
+  </div>
+
+</div>
+
+<p class="note">A 32px solo se muestra el toque + "N" — el texto completo no es legible a ese tamaño.</p>
+<p class="note" style="margin-top:24px;">¿Ajustamos algo? Proporciones, fuente, color del texto, posición del palo...</p>
+</body>
+</html>

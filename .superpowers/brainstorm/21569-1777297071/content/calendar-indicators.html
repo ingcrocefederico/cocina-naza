@@ -1,0 +1,273 @@
+<h2>Indicadores de pedidos en el calendario</h2>
+<p class="subtitle">¿Cómo mostrar que un día tiene pedidos? Elegí el estilo que más te gusta.</p>
+
+<style>
+  .calendar-demo {
+    background: #1a0f00;
+    border-radius: 12px;
+    padding: 16px;
+    width: 260px;
+    font-family: inherit;
+  }
+  .cal-month {
+    text-align: center;
+    color: #d4b896;
+    font-size: 13px;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-header {
+    text-align: center;
+    font-size: 10px;
+    color: #8a7060;
+    padding: 4px 0;
+    text-transform: uppercase;
+  }
+  .cal-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    border-radius: 8px;
+    min-height: 40px;
+    cursor: pointer;
+    position: relative;
+  }
+  .cal-day.other-month { color: #4a3020; }
+  .cal-day.today {
+    background: #F97316;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+  }
+  .cal-day .day-num {
+    font-size: 13px;
+    color: #e8d5c0;
+    line-height: 1;
+  }
+  .cal-day.other-month .day-num { color: #4a3020; }
+  .cal-day.today .day-num { color: white; }
+
+  /* OPCIÓN A: Dot */
+  .dot-indicator {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #F97316;
+    margin-top: 3px;
+  }
+  .cal-day.today .dot-indicator { background: rgba(255,255,255,0.8); }
+
+  /* OPCIÓN B: Count text */
+  .count-text {
+    font-size: 9px;
+    color: #F97316;
+    font-weight: 700;
+    margin-top: 2px;
+    line-height: 1;
+  }
+  .cal-day.today .count-text { color: rgba(255,255,255,0.9); }
+
+  /* OPCIÓN C: Count badge pill */
+  .count-badge {
+    font-size: 9px;
+    background: #F97316;
+    color: white;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 5px;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .cal-day.today .count-badge {
+    background: rgba(255,255,255,0.25);
+    color: white;
+  }
+
+  .options-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .option-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+</style>
+
+<div class="options">
+
+  <!-- OPCIÓN A -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Punto naranja</h3>
+      <p>Un punto debajo del número indica que hay pedidos. Simple y limpio, sin distraer.</p>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        <div class="calendar-demo">
+          <div class="cal-month">abril 2026</div>
+          <div class="cal-grid">
+            <div class="cal-header">lu</div><div class="cal-header">ma</div><div class="cal-header">mi</div>
+            <div class="cal-header">ju</div><div class="cal-header">vi</div><div class="cal-header">sá</div><div class="cal-header">do</div>
+            <!-- Row 1 -->
+            <div class="cal-day other-month"><span class="day-num">30</span></div>
+            <div class="cal-day other-month"><span class="day-num">31</span></div>
+            <div class="cal-day"><span class="day-num">1</span></div>
+            <div class="cal-day"><span class="day-num">2</span></div>
+            <div class="cal-day"><span class="day-num">3</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">4</span></div>
+            <div class="cal-day"><span class="day-num">5</span><div class="dot-indicator"></div></div>
+            <!-- Row 2 -->
+            <div class="cal-day"><span class="day-num">6</span></div>
+            <div class="cal-day"><span class="day-num">7</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">8</span></div>
+            <div class="cal-day"><span class="day-num">9</span></div>
+            <div class="cal-day"><span class="day-num">10</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">11</span></div>
+            <div class="cal-day"><span class="day-num">12</span><div class="dot-indicator"></div></div>
+            <!-- Row 3 -->
+            <div class="cal-day"><span class="day-num">13</span></div>
+            <div class="cal-day"><span class="day-num">14</span></div>
+            <div class="cal-day"><span class="day-num">15</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">16</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">17</span></div>
+            <div class="cal-day"><span class="day-num">18</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">19</span></div>
+            <!-- Row 4 -->
+            <div class="cal-day"><span class="day-num">20</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">21</span></div>
+            <div class="cal-day"><span class="day-num">22</span></div>
+            <div class="cal-day"><span class="day-num">23</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">24</span></div>
+            <div class="cal-day"><span class="day-num">25</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">26</span><div class="dot-indicator"></div></div>
+            <!-- Row 5 -->
+            <div class="cal-day today"><span class="day-num">27</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">28</span></div>
+            <div class="cal-day"><span class="day-num">29</span><div class="dot-indicator"></div></div>
+            <div class="cal-day"><span class="day-num">30</span></div>
+            <div class="cal-day other-month"><span class="day-num">1</span></div>
+            <div class="cal-day other-month"><span class="day-num">2</span></div>
+            <div class="cal-day other-month"><span class="day-num">3</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPCIÓN B -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Número de pedidos</h3>
+      <p>El conteo exacto debajo del día en naranja. Ves de un vistazo cuántos pedidos tiene cada fecha.</p>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        <div class="calendar-demo">
+          <div class="cal-month">abril 2026</div>
+          <div class="cal-grid">
+            <div class="cal-header">lu</div><div class="cal-header">ma</div><div class="cal-header">mi</div>
+            <div class="cal-header">ju</div><div class="cal-header">vi</div><div class="cal-header">sá</div><div class="cal-header">do</div>
+            <div class="cal-day other-month"><span class="day-num">30</span></div>
+            <div class="cal-day other-month"><span class="day-num">31</span></div>
+            <div class="cal-day"><span class="day-num">1</span></div>
+            <div class="cal-day"><span class="day-num">2</span></div>
+            <div class="cal-day"><span class="day-num">3</span><span class="count-text">2</span></div>
+            <div class="cal-day"><span class="day-num">4</span></div>
+            <div class="cal-day"><span class="day-num">5</span><span class="count-text">1</span></div>
+            <div class="cal-day"><span class="day-num">6</span></div>
+            <div class="cal-day"><span class="day-num">7</span><span class="count-text">4</span></div>
+            <div class="cal-day"><span class="day-num">8</span></div>
+            <div class="cal-day"><span class="day-num">9</span></div>
+            <div class="cal-day"><span class="day-num">10</span><span class="count-text">3</span></div>
+            <div class="cal-day"><span class="day-num">11</span></div>
+            <div class="cal-day"><span class="day-num">12</span><span class="count-text">2</span></div>
+            <div class="cal-day"><span class="day-num">13</span></div>
+            <div class="cal-day"><span class="day-num">14</span></div>
+            <div class="cal-day"><span class="day-num">15</span><span class="count-text">5</span></div>
+            <div class="cal-day"><span class="day-num">16</span><span class="count-text">1</span></div>
+            <div class="cal-day"><span class="day-num">17</span></div>
+            <div class="cal-day"><span class="day-num">18</span><span class="count-text">3</span></div>
+            <div class="cal-day"><span class="day-num">19</span></div>
+            <div class="cal-day"><span class="day-num">20</span><span class="count-text">2</span></div>
+            <div class="cal-day"><span class="day-num">21</span></div>
+            <div class="cal-day"><span class="day-num">22</span></div>
+            <div class="cal-day"><span class="day-num">23</span><span class="count-text">4</span></div>
+            <div class="cal-day"><span class="day-num">24</span></div>
+            <div class="cal-day"><span class="day-num">25</span><span class="count-text">2</span></div>
+            <div class="cal-day"><span class="day-num">26</span><span class="count-text">6</span></div>
+            <div class="cal-day today"><span class="day-num">27</span><span class="count-text">3</span></div>
+            <div class="cal-day"><span class="day-num">28</span></div>
+            <div class="cal-day"><span class="day-num">29</span><span class="count-text">1</span></div>
+            <div class="cal-day"><span class="day-num">30</span></div>
+            <div class="cal-day other-month"><span class="day-num">1</span></div>
+            <div class="cal-day other-month"><span class="day-num">2</span></div>
+            <div class="cal-day other-month"><span class="day-num">3</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPCIÓN C -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Badge pill naranja</h3>
+      <p>Un chip/pill con el número, más prominente. Imposible pasarlo por alto, ideal si hay muchos pedidos por día.</p>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        <div class="calendar-demo">
+          <div class="cal-month">abril 2026</div>
+          <div class="cal-grid">
+            <div class="cal-header">lu</div><div class="cal-header">ma</div><div class="cal-header">mi</div>
+            <div class="cal-header">ju</div><div class="cal-header">vi</div><div class="cal-header">sá</div><div class="cal-header">do</div>
+            <div class="cal-day other-month"><span class="day-num">30</span></div>
+            <div class="cal-day other-month"><span class="day-num">31</span></div>
+            <div class="cal-day"><span class="day-num">1</span></div>
+            <div class="cal-day"><span class="day-num">2</span></div>
+            <div class="cal-day"><span class="day-num">3</span><span class="count-badge">2</span></div>
+            <div class="cal-day"><span class="day-num">4</span></div>
+            <div class="cal-day"><span class="day-num">5</span><span class="count-badge">1</span></div>
+            <div class="cal-day"><span class="day-num">6</span></div>
+            <div class="cal-day"><span class="day-num">7</span><span class="count-badge">4</span></div>
+            <div class="cal-day"><span class="day-num">8</span></div>
+            <div class="cal-day"><span class="day-num">9</span></div>
+            <div class="cal-day"><span class="day-num">10</span><span class="count-badge">3</span></div>
+            <div class="cal-day"><span class="day-num">11</span></div>
+            <div class="cal-day"><span class="day-num">12</span><span class="count-badge">2</span></div>
+            <div class="cal-day"><span class="day-num">13</span></div>
+            <div class="cal-day"><span class="day-num">14</span></div>
+            <div class="cal-day"><span class="day-num">15</span><span class="count-badge">5</span></div>
+            <div class="cal-day"><span class="day-num">16</span><span class="count-badge">1</span></div>
+            <div class="cal-day"><span class="day-num">17</span></div>
+            <div class="cal-day"><span class="day-num">18</span><span class="count-badge">3</span></div>
+            <div class="cal-day"><span class="day-num">19</span></div>
+            <div class="cal-day"><span class="day-num">20</span><span class="count-badge">2</span></div>
+            <div class="cal-day"><span class="day-num">21</span></div>
+            <div class="cal-day"><span class="day-num">22</span></div>
+            <div class="cal-day"><span class="day-num">23</span><span class="count-badge">4</span></div>
+            <div class="cal-day"><span class="day-num">24</span></div>
+            <div class="cal-day"><span class="day-num">25</span><span class="count-badge">2</span></div>
+            <div class="cal-day"><span class="day-num">26</span><span class="count-badge">6</span></div>
+            <div class="cal-day today"><span class="day-num">27</span><span class="count-badge">3</span></div>
+            <div class="cal-day"><span class="day-num">28</span></div>
+            <div class="cal-day"><span class="day-num">29</span><span class="count-badge">1</span></div>
+            <div class="cal-day"><span class="day-num">30</span></div>
+            <div class="cal-day other-month"><span class="day-num">1</span></div>
+            <div class="cal-day other-month"><span class="day-num">2</span></div>
+            <div class="cal-day other-month"><span class="day-num">3</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
