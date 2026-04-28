@@ -64,7 +64,7 @@ psql cocina -f backend/src/db/migrations/001_init.sql
 npm run dev
 ```
 
-Levanta backend (`:3001`) y frontend (`:5173`) en paralelo con output diferenciado por color.
+Levanta backend (`:3002`) y frontend (`:5173`) en paralelo con output diferenciado por color.
 
 Las requests a `/api/*` se proxean automáticamente al backend (configurado en `vite.config.ts`).
 
@@ -93,7 +93,7 @@ En [Google Cloud Console](https://console.cloud.google.com):
 
 1. Crear proyecto → APIs & Services → Credentials → OAuth 2.0 Client ID
 2. Application type: **Web application**
-3. Authorized redirect URIs agregar: `http://localhost:3001/api/auth/google/callback`
+3. Authorized redirect URIs agregar: `http://localhost:3002/api/auth/google/callback`
 4. Copiar Client ID y Client Secret al `backend/.env`
 
 Flujo de login: `http://localhost:5173` → click "Entrar con Google" → redirect a Google → redirect a `http://localhost:5173/pedidos` con cookie.
