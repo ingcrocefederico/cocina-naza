@@ -8,38 +8,37 @@ export const clientsRouter = Router()
 clientsRouter.use(requireAuth)
 
 clientsRouter.get('/', async (_req, res) => {
-  const clientsRes = await query<Client & { debt: string; total_budines: string }>(
-    `SELECT
-       c.*,
-       COALESCE(d.debt, 0) AS debt,
-       COALESCE(tb.total_budines, 0) AS total_budines
-     FROM clients c
-     LEFT JOIN (
-       SELECT client_id, SUM(COALESCE(sale_price, 0)) AS debt
-       FROM orders
-       WHERE status != 'cobrado' AND client_id IS NOT NULL
-       GROUP BY client_id
-     ) d ON d.client_id = c.id
-     LEFT JOIN (
-       SELECT o.client_id, SUM(oi.quantity) AS total_budines
+  const [clientsRes, flavorsRes] = await Promise.all([
+    query<Client & { debt: string; total_budines: string }>(
+      `SELECT
+         c.*,
+         COALESCE(d.debt, 0) AS debt,
+         COALESCE(tb.total_budines, 0) AS total_budines
+       FROM clients c
+       LEFT JOIN (
+         SELECT client_id, SUM(COALESCE(sale_price, 0)) AS debt
+         FROM orders
+         WHERE status != 'cobrado' AND client_id IS NOT NULL
+         GROUP BY client_id
+       ) d ON d.client_id = c.id
+       LEFT JOIN (
+         SELECT o.client_id, SUM(oi.quantity) AS total_budines
+         FROM orders o
+         JOIN order_items oi ON oi.order_id = o.id
+         WHERE o.client_id IS NOT NULL
+         GROUP BY o.client_id
+       ) tb ON tb.client_id = c.id
+       ORDER BY c.name`
+    ),
+    query<{ client_id: string; flavor_name: string; emoji: string; quantity: string }>(
+      `SELECT o.client_id, f.name AS flavor_name, f.emoji, SUM(oi.quantity) AS quantity
        FROM orders o
        JOIN order_items oi ON oi.order_id = o.id
+       JOIN flavors f ON f.id = oi.flavor_id
        WHERE o.client_id IS NOT NULL
-       GROUP BY o.client_id
-     ) tb ON tb.client_id = c.id
-     ORDER BY c.name`
-  )
-
-  const flavorsRes = await query<{
-    client_id: string; flavor_name: string; emoji: string; quantity: string
-  }>(
-    `SELECT o.client_id, f.name AS flavor_name, f.emoji, SUM(oi.quantity) AS quantity
-     FROM orders o
-     JOIN order_items oi ON oi.order_id = o.id
-     JOIN flavors f ON f.id = oi.flavor_id
-     WHERE o.client_id IS NOT NULL
-     GROUP BY o.client_id, f.id, f.name, f.emoji`
-  )
+       GROUP BY o.client_id, f.id, f.name, f.emoji`
+    ),
+  ])
 
   const flavorsByClient: Record<string, { flavor_name: string; emoji: string; quantity: number }[]> = {}
   for (const row of flavorsRes.rows) {
@@ -81,6 +80,10 @@ clientsRouter.put('/:id', async (req, res) => {
   const { name, address, phone, notes } = req.body as {
     name?: string; address?: string; phone?: string; notes?: string
   }
+  if (name !== undefined && !name.trim()) {
+    res.status(400).json({ error: 'name cannot be empty' })
+    return
+  }
   const result = await query<Client>(
     `UPDATE clients SET
        name       = COALESCE($1, name),
@@ -99,6 +102,10 @@ clientsRouter.put('/:id', async (req, res) => {
 })
 
 clientsRouter.delete('/:id', async (req, res) => {
-  await query('DELETE FROM clients WHERE id = $1', [req.params.id])
+  const result = await query<{ id: string }>('DELETE FROM clients WHERE id = $1 RETURNING id', [req.params.id])
+  if (!result.rows.length) {
+    res.status(404).json({ error: 'Client not found' })
+    return
+  }
   res.json({ ok: true })
 })

@@ -116,9 +116,11 @@ ordersRouter.put('/:id', async (req, res) => {
   let resolvedClientName: string | null = bodyClientName ?? null
   if (client_id) {
     const clientRes = await query<{ name: string }>('SELECT name FROM clients WHERE id = $1', [client_id])
-    if (clientRes.rows.length) {
-      resolvedClientName = clientRes.rows[0].name
+    if (!clientRes.rows.length) {
+      res.status(400).json({ error: 'Client not found' })
+      return
     }
+    resolvedClientName = clientRes.rows[0].name
   }
 
   const orderRes = await query<{ id: string }>(
