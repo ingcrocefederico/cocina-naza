@@ -67,18 +67,33 @@ ordersRouter.get('/counts', async (req, res) => {
 })
 
 ordersRouter.post('/', async (req, res) => {
-  const { client_name, address, date, status = 'pedido', sale_price, notes, items = [] } = req.body as {
-    client_name?: string; address?: string; date?: string; status?: string;
+  const { client_id, client_name: bodyClientName, address, date, status = 'pedido', sale_price, notes, items = [] } = req.body as {
+    client_id?: string; client_name?: string; address?: string; date?: string; status?: string;
     sale_price?: number; notes?: string; items?: { flavor_id: string; quantity: number }[]
   }
-  if (!client_name || !date) {
-    res.status(400).json({ error: 'client_name and date are required' })
+  if (!date) {
+    res.status(400).json({ error: 'date is required' })
     return
   }
-  const orderRes = await query<Order>(
-    `INSERT INTO orders (client_name, address, date, status, sale_price, notes)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [client_name, address ?? null, date, status, sale_price ?? null, notes ?? null]
+
+  let client_name = bodyClientName ?? null
+  if (client_id) {
+    const clientRes = await query<{ name: string }>('SELECT name FROM clients WHERE id = $1', [client_id])
+    if (!clientRes.rows.length) {
+      res.status(400).json({ error: 'Client not found' })
+      return
+    }
+    client_name = clientRes.rows[0].name
+  }
+  if (!client_name) {
+    res.status(400).json({ error: 'client_id or client_name is required' })
+    return
+  }
+
+  const orderRes = await query<{ id: string }>(
+    `INSERT INTO orders (client_name, client_id, address, date, status, sale_price, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [client_name, client_id ?? null, address ?? null, date, status, sale_price ?? null, notes ?? null]
   )
   const order = orderRes.rows[0]
 
@@ -93,21 +108,31 @@ ordersRouter.post('/', async (req, res) => {
 })
 
 ordersRouter.put('/:id', async (req, res) => {
-  const { client_name, address, date, status, sale_price, notes, items } = req.body as {
-    client_name?: string; address?: string; date?: string; status?: string;
+  const { client_id, client_name: bodyClientName, address, date, status, sale_price, notes, items } = req.body as {
+    client_id?: string; client_name?: string; address?: string; date?: string; status?: string;
     sale_price?: number; notes?: string; items?: { flavor_id: string; quantity: number }[]
   }
-  const orderRes = await query<Order>(
+
+  let resolvedClientName: string | null = bodyClientName ?? null
+  if (client_id) {
+    const clientRes = await query<{ name: string }>('SELECT name FROM clients WHERE id = $1', [client_id])
+    if (clientRes.rows.length) {
+      resolvedClientName = clientRes.rows[0].name
+    }
+  }
+
+  const orderRes = await query<{ id: string }>(
     `UPDATE orders SET
        client_name = COALESCE($1, client_name),
-       address     = COALESCE($2, address),
-       date        = COALESCE($3, date),
-       status      = COALESCE($4, status),
-       sale_price  = COALESCE($5, sale_price),
-       notes       = COALESCE($6, notes),
+       client_id   = COALESCE($2, client_id),
+       address     = COALESCE($3, address),
+       date        = COALESCE($4, date),
+       status      = COALESCE($5, status),
+       sale_price  = COALESCE($6, sale_price),
+       notes       = COALESCE($7, notes),
        updated_at  = now()
-     WHERE id = $7 RETURNING *`,
-    [client_name ?? null, address ?? null, date ?? null, status ?? null, sale_price ?? null, notes ?? null, req.params.id]
+     WHERE id = $8 RETURNING id`,
+    [resolvedClientName, client_id ?? null, address ?? null, date ?? null, status ?? null, sale_price ?? null, notes ?? null, req.params.id]
   )
   if (!orderRes.rows.length) {
     res.status(404).json({ error: 'Order not found' })
