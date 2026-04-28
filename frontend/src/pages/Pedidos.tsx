@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useOrders, useUpdateOrder, useDeleteOrder, useCalculator, useOrderCounts } from '../hooks/useOrders'
+import { useOrders, useUpdateOrder, useDeleteOrder, useCalculator, useOrderCounts, useLatestOrderDate } from '../hooks/useOrders'
 import StatusBadge from '../components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,13 +13,15 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users } from 'lucide-react'
 import type { Order, OrderStatus } from '../types'
 
-const STATUSES: OrderStatus[] = ['pedido', 'preparado', 'entregado', 'cobrado']
+const STATUSES: OrderStatus[] = ['pedido', 'preparado', 'entregado', 'cobrado_efectivo', 'cobrado_transf']
 
 const STATUS_BORDER: Record<OrderStatus, string> = {
-  pedido:    'border-l-stone-500',
-  preparado: 'border-l-amber-400',
-  entregado: 'border-l-sky-400',
-  cobrado:   'border-l-emerald-500',
+  pedido:            'border-l-stone-500',
+  preparado:         'border-l-amber-400',
+  entregado:         'border-l-sky-400',
+  cobrado:           'border-l-emerald-500',
+  cobrado_efectivo:  'border-l-emerald-500',
+  cobrado_transf:    'border-l-teal-500',
 }
 
 type SheetView = 'total' | 'por-sabor'
@@ -27,8 +29,16 @@ type SheetView = 'total' | 'por-sabor'
 export default function Pedidos() {
   const [params, setParams] = useSearchParams()
   const today = format(new Date(), 'yyyy-MM-dd')
-  const date = params.get('date') || today
+  const { data: latestDateData } = useLatestOrderDate()
+  const latestDate = latestDateData?.date ?? today
+  const date = params.get('date') || latestDate
   const [visibleMonth, setVisibleMonth] = useState(() => format(new Date(), 'yyyy-MM'))
+
+  useEffect(() => {
+    if (!params.get('date') && latestDateData?.date) {
+      setVisibleMonth(latestDateData.date.substring(0, 7))
+    }
+  }, [latestDateData?.date])
   const { data: orderCounts = {} } = useOrderCounts(visibleMonth)
 
   const { data: orders = [], isLoading } = useOrders(date)
@@ -64,8 +74,10 @@ export default function Pedidos() {
     updateOrder.mutate({ id: order.id, status })
   }
 
+  const COBRADO_STATUSES = ['cobrado', 'cobrado_efectivo', 'cobrado_transf'] as const
+
   const filteredOrders = orders.filter(o => {
-    if (statusFilter === 'deuda' && o.status === 'cobrado') return false
+    if (statusFilter === 'deuda' && COBRADO_STATUSES.includes(o.status as typeof COBRADO_STATUSES[number])) return false
     if (statusFilter && statusFilter !== 'deuda' && o.status !== statusFilter) return false
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -77,7 +89,7 @@ export default function Pedidos() {
 
   const totalBudines = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0)
   const totalVenta = orders.reduce((sum, o) => sum + parseFloat(o.sale_price || '0'), 0)
-  const deuda = orders.filter(o => o.status !== 'cobrado').reduce((sum, o) => sum + parseFloat(o.sale_price || '0'), 0)
+  const deuda = orders.filter(o => !COBRADO_STATUSES.includes(o.status as typeof COBRADO_STATUSES[number])).reduce((sum, o) => sum + parseFloat(o.sale_price || '0'), 0)
 
   return (
     <div className="space-y-4">
@@ -145,18 +157,19 @@ export default function Pedidos() {
             />
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {([null, 'deuda', 'pedido', 'preparado', 'entregado', 'cobrado'] as const).map(s => {
+            {([null, 'deuda', 'pedido', 'preparado', 'entregado', 'cobrado_efectivo', 'cobrado_transf'] as const).map(s => {
               const active = statusFilter === s
               const labels: Record<string, string> = {
                 deuda: 'Deuda', pedido: 'Pedido', preparado: 'Preparado',
-                entregado: 'Entregado', cobrado: 'Cobrado',
+                entregado: 'Entregado', cobrado_efectivo: 'Cob. Efectivo', cobrado_transf: 'Cob. Transf.',
               }
               const activeStyles: Record<string, string> = {
-                deuda:     'bg-destructive/20 text-destructive border-destructive/40',
-                pedido:    'bg-stone-700/50 text-stone-300 border-stone-600/40',
-                preparado: 'bg-amber-900/50 text-amber-300 border-amber-700/40',
-                entregado: 'bg-sky-900/50 text-sky-300 border-sky-700/40',
-                cobrado:   'bg-emerald-900/50 text-emerald-300 border-emerald-700/40',
+                deuda:            'bg-destructive/20 text-destructive border-destructive/40',
+                pedido:           'bg-stone-700/50 text-stone-300 border-stone-600/40',
+                preparado:        'bg-amber-900/50 text-amber-300 border-amber-700/40',
+                entregado:        'bg-sky-900/50 text-sky-300 border-sky-700/40',
+                cobrado_efectivo: 'bg-emerald-900/50 text-emerald-300 border-emerald-700/40',
+                cobrado_transf:   'bg-teal-900/50 text-teal-300 border-teal-700/40',
               }
               return (
                 <button

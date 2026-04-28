@@ -1,4 +1,4 @@
-export type OrderStatus = 'pedido' | 'preparado' | 'entregado' | 'cobrado'
+export type OrderStatus = 'pedido' | 'preparado' | 'entregado' | 'cobrado' | 'cobrado_efectivo' | 'cobrado_transf'
 export type Unit = 'kg' | 'g' | 'L' | 'ml' | 'unidad'
 
 export interface User {

@@ -18,7 +18,7 @@ clientsRouter.get('/', async (_req, res) => {
        LEFT JOIN (
          SELECT client_id, SUM(COALESCE(sale_price, 0)) AS debt
          FROM orders
-         WHERE status != 'cobrado' AND client_id IS NOT NULL
+         WHERE status NOT IN ('cobrado', 'cobrado_efectivo', 'cobrado_transf') AND client_id IS NOT NULL
          GROUP BY client_id
        ) d ON d.client_id = c.id
        LEFT JOIN (

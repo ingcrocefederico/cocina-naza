@@ -33,6 +33,21 @@ export function useOrders(date: string) {
   })
 }
 
+export function useLatestOrderDate() {
+  return useQuery<{ date: string | null }>({
+    queryKey: ['orders', 'latest-date'],
+    queryFn: async () => (await api.get('/api/orders/latest-date')).data,
+  })
+}
+
+export function useClientOrders(clientId: string | null) {
+  return useQuery<Order[]>({
+    queryKey: ['orders', 'client', clientId],
+    queryFn: async () => (await api.get(`/api/orders/by-client/${clientId}`)).data,
+    enabled: !!clientId,
+  })
+}
+
 export function useOrderCounts(month: string) {
   return useQuery<Record<string, number>>({
     queryKey: ['order-counts', month],

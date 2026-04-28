@@ -23,6 +23,34 @@ async function fetchOrderWithItems(orderId: string): Promise<OrderWithItems | nu
   return { ...orderRes.rows[0], items: itemsRes.rows }
 }
 
+ordersRouter.get('/latest-date', async (_req, res) => {
+  const result = await query<{ date: string }>(
+    `SELECT date::text FROM orders ORDER BY date DESC, created_at DESC LIMIT 1`
+  )
+  res.json({ date: result.rows[0]?.date ?? null })
+})
+
+ordersRouter.get('/by-client/:clientId', async (req, res) => {
+  const ordersRes = await query<Order>(
+    `SELECT * FROM orders WHERE client_id = $1 ORDER BY date DESC, created_at DESC`,
+    [req.params.clientId]
+  )
+  const ordersWithItems = await Promise.all(
+    ordersRes.rows.map(async (order) => {
+      const itemsRes = await query<ItemRow>(
+        `SELECT oi.id, oi.order_id, oi.flavor_id, f.name AS flavor_name, f.emoji AS flavor_emoji,
+                oi.quantity, f.price_per_budin
+         FROM order_items oi
+         JOIN flavors f ON f.id = oi.flavor_id
+         WHERE oi.order_id = $1`,
+        [order.id]
+      )
+      return { ...order, items: itemsRes.rows }
+    })
+  )
+  res.json(ordersWithItems)
+})
+
 ordersRouter.get('/', async (req, res) => {
   const { date } = req.query
   if (!date) {

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { useFlavors } from '../hooks/useFlavors'
-import { useCreateOrder, useUpdateOrder, useOrders } from '../hooks/useOrders'
+import { useCreateOrder, useUpdateOrder, useOrders, useLatestOrderDate } from '../hooks/useOrders'
 import { useClients } from '../hooks/useClients'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +25,7 @@ const schema = z.object({
   client_id: z.string().min(1, 'Seleccioná un cliente'),
   address: z.string().optional(),
   date: z.string().min(1),
-  status: z.enum(['pedido', 'preparado', 'entregado', 'cobrado']),
+  status: z.enum(['pedido', 'preparado', 'entregado', 'cobrado', 'cobrado_efectivo', 'cobrado_transf']),
   sale_price: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(itemSchema).min(1, 'Agregá al menos un budín'),
@@ -35,17 +35,18 @@ type FormValues = {
   client_id: string
   address?: string
   date: string
-  status: 'pedido' | 'preparado' | 'entregado' | 'cobrado'
+  status: 'pedido' | 'preparado' | 'entregado' | 'cobrado' | 'cobrado_efectivo' | 'cobrado_transf'
   sale_price?: string
   notes?: string
   items: { flavor_id: string; quantity: number }[]
 }
 
 const STATUSES: { value: OrderStatus; label: string }[] = [
-  { value: 'pedido', label: 'Pedido' },
-  { value: 'preparado', label: 'Preparado' },
-  { value: 'entregado', label: 'Entregado' },
-  { value: 'cobrado', label: 'Cobrado' },
+  { value: 'pedido',           label: 'Pedido' },
+  { value: 'preparado',        label: 'Preparado' },
+  { value: 'entregado',        label: 'Entregado' },
+  { value: 'cobrado_efectivo', label: 'Cob. Efectivo' },
+  { value: 'cobrado_transf',   label: 'Cob. Transf.' },
 ]
 
 export default function PedidoForm() {
@@ -57,6 +58,7 @@ export default function PedidoForm() {
   const dateFromParams = searchParams.get('date') || format(new Date(), 'yyyy-MM-dd')
   const { data: flavors = [] } = useFlavors()
   const { data: orders = [] } = useOrders(dateFromParams)
+  const { data: latestDateData } = useLatestOrderDate()
   const createOrder = useCreateOrder()
   const updateOrder = useUpdateOrder()
   const { data: clients = [] } = useClients()
@@ -91,6 +93,12 @@ export default function PedidoForm() {
     remove(idx)
     setFlavorTypes(prev => prev.filter((_, i) => i !== idx))
   }
+
+  useEffect(() => {
+    if (!isEdit && latestDateData?.date) {
+      setValue('date', latestDateData.date)
+    }
+  }, [latestDateData, isEdit, setValue])
 
   useEffect(() => {
     if (existingOrder && flavors.length > 0) {

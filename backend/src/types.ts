@@ -33,7 +33,7 @@ export interface Order {
   client_id: string | null
   address: string | null
   date: string
-  status: 'pedido' | 'preparado' | 'entregado' | 'cobrado'
+  status: 'pedido' | 'preparado' | 'entregado' | 'cobrado' | 'cobrado_efectivo' | 'cobrado_transf'
   sale_price: string | null
   notes: string | null
   created_at: string
