@@ -6,13 +6,15 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { useFlavors } from '../hooks/useFlavors'
 import { useCreateOrder, useUpdateOrder, useOrders } from '../hooks/useOrders'
+import { useClients } from '../hooks/useClients'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Trash2, Plus, ArrowLeft } from 'lucide-react'
-import type { OrderStatus } from '../types'
+import ClientSheet from '../components/ClientSheet'
+import type { OrderStatus, Client } from '../types'
 
 const itemSchema = z.object({
   flavor_id: z.string().min(1, 'Elegí un sabor'),
@@ -20,7 +22,7 @@ const itemSchema = z.object({
 })
 
 const schema = z.object({
-  client_name: z.string().min(1, 'Nombre requerido'),
+  client_id: z.string().min(1, 'Seleccioná un cliente'),
   address: z.string().optional(),
   date: z.string().min(1),
   status: z.enum(['pedido', 'preparado', 'entregado', 'cobrado']),
@@ -30,7 +32,7 @@ const schema = z.object({
 })
 
 type FormValues = {
-  client_name: string
+  client_id: string
   address?: string
   date: string
   status: 'pedido' | 'preparado' | 'entregado' | 'cobrado'
@@ -57,27 +59,28 @@ export default function PedidoForm() {
   const { data: orders = [] } = useOrders(dateFromParams)
   const createOrder = useCreateOrder()
   const updateOrder = useUpdateOrder()
+  const { data: clients = [] } = useClients()
+  const [clientSheetOpen, setClientSheetOpen] = useState(false)
 
   const existingOrder = useMemo(() => orders.find(o => o.id === id), [orders, id])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema),
     defaultValues: {
-      client_name: '',
+      client_id: '',
       address: '',
       date: dateFromParams,
       status: 'pedido',
       sale_price: '',
       notes: '',
-      items: [{ flavor_id: '', quantity: 1 }],
+      items: [],
     },
   })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
   const watchedItems = useWatch({ control, name: 'items' })
 
-  const [flavorTypes, setFlavorTypes] = useState<('común' | 'integral')[]>(['común'])
+  const [flavorTypes, setFlavorTypes] = useState<('común' | 'integral')[]>([])
 
   function appendFlavor(type: 'común' | 'integral') {
     append({ flavor_id: '', quantity: 1 })
@@ -91,7 +94,7 @@ export default function PedidoForm() {
 
   useEffect(() => {
     if (existingOrder && flavors.length > 0) {
-      setValue('client_name', existingOrder.client_name)
+      if (existingOrder.client_id) setValue('client_id', existingOrder.client_id)
       setValue('address', existingOrder.address || '')
       setValue('date', existingOrder.date)
       setValue('status', existingOrder.status)
@@ -122,11 +125,11 @@ export default function PedidoForm() {
   }, [calculatedPrice, priceEdited, setValue])
 
   async function onSubmit(data: FormValues) {
-    const { client_name, address, date, status, sale_price, notes, items } = data
+    const { client_id, address, date, status, sale_price, notes, items } = data
     if (isEdit && id) {
-      await updateOrder.mutateAsync({ id, client_name, address, date, status, sale_price, notes, items })
+      await updateOrder.mutateAsync({ id, client_id, address, date, status, sale_price, notes, items })
     } else {
-      await createOrder.mutateAsync({ client_name, address, date, status, sale_price, notes, items })
+      await createOrder.mutateAsync({ client_id, address, date, status, sale_price, notes, items })
     }
     navigate(`/pedidos?date=${data.date}`)
   }
@@ -140,12 +143,34 @@ export default function PedidoForm() {
         <h1 className="text-xl font-bold text-foreground">{isEdit ? 'Editar pedido' : 'Nuevo pedido'}</h1>
       </div>
 
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <form onSubmit={(handleSubmit as any)(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <Label>Nombre del cliente *</Label>
-          <Input {...register('client_name')} placeholder="María González" />
-          {errors.client_name && <p className="text-destructive text-xs mt-1">{errors.client_name.message}</p>}
+          <Label>Cliente *</Label>
+          <Controller
+            control={control}
+            name="client_id"
+            render={({ field }) => (
+              <SelectSheet
+                value={field.value}
+                onValueChange={(val) => {
+                  field.onChange(val)
+                  const client = clients.find(c => c.id === val)
+                  if (client?.address) setValue('address', client.address)
+                }}
+                options={clients.map(c => ({
+                  value: c.id,
+                  label: c.name,
+                  sublabel: c.phone ?? undefined,
+                }))}
+                placeholder="Seleccioná un cliente"
+                title="Cliente"
+                searchable
+                onCreate={() => setClientSheetOpen(true)}
+                createLabel="Nuevo cliente..."
+              />
+            )}
+          />
+          {errors.client_id && <p className="text-destructive text-xs mt-1">{errors.client_id.message}</p>}
         </div>
 
         <div>
@@ -284,6 +309,15 @@ export default function PedidoForm() {
           </Button>
         </div>
       </form>
+
+      <ClientSheet
+        open={clientSheetOpen}
+        onOpenChange={setClientSheetOpen}
+        onSuccess={(client: Client) => {
+          setValue('client_id', client.id)
+          if (client.address) setValue('address', client.address)
+        }}
+      />
     </div>
   )
 }
