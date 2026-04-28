@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users } from 'lucide-react'
 import type { Order, OrderStatus } from '../types'
 
 const STATUSES: OrderStatus[] = ['pedido', 'preparado', 'entregado', 'cobrado']
@@ -37,6 +37,8 @@ export default function Pedidos() {
   const navigate = useNavigate()
 
 
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'deuda' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null)
 
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -54,11 +56,24 @@ export default function Pedidos() {
 
   function setDate(d: string) {
     setParams({ date: d })
+    setSearch('')
+    setStatusFilter(null)
   }
 
   function changeStatus(order: Order, status: OrderStatus) {
     updateOrder.mutate({ id: order.id, status })
   }
+
+  const filteredOrders = orders.filter(o => {
+    if (statusFilter === 'deuda' && o.status === 'cobrado') return false
+    if (statusFilter && statusFilter !== 'deuda' && o.status !== statusFilter) return false
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      return o.client_name.toLowerCase().includes(q) ||
+        o.items.some(i => i.flavor_name.toLowerCase().includes(q))
+    }
+    return true
+  })
 
   const totalBudines = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0)
   const totalVenta = orders.reduce((sum, o) => sum + parseFloat(o.sale_price || '0'), 0)
@@ -79,6 +94,13 @@ export default function Pedidos() {
           />
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/clientes')}
+          >
+            <Users className="w-4 h-4 mr-1" /> Clientes
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -111,15 +133,67 @@ export default function Pedidos() {
         </div>
       )}
 
+      {orders.length > 0 && (
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Buscar cliente o sabor..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {([null, 'deuda', 'pedido', 'preparado', 'entregado', 'cobrado'] as const).map(s => {
+              const active = statusFilter === s
+              const labels: Record<string, string> = {
+                deuda: 'Deuda', pedido: 'Pedido', preparado: 'Preparado',
+                entregado: 'Entregado', cobrado: 'Cobrado',
+              }
+              const activeStyles: Record<string, string> = {
+                deuda:     'bg-destructive/20 text-destructive border-destructive/40',
+                pedido:    'bg-stone-700/50 text-stone-300 border-stone-600/40',
+                preparado: 'bg-amber-900/50 text-amber-300 border-amber-700/40',
+                entregado: 'bg-sky-900/50 text-sky-300 border-sky-700/40',
+                cobrado:   'bg-emerald-900/50 text-emerald-300 border-emerald-700/40',
+              }
+              return (
+                <button
+                  key={String(s)}
+                  type="button"
+                  onClick={() => setStatusFilter(active ? null : s)}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border cursor-pointer transition-colors ${
+                    s === null
+                      ? active || statusFilter === null
+                        ? 'bg-primary/20 text-primary border-primary/40'
+                        : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                      : active
+                        ? activeStyles[s]
+                        : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                  }`}
+                >
+                  {s === null ? 'Todos' : labels[s]}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {isLoading && <div className="text-muted-foreground">Cargando...</div>}
 
       {!isLoading && orders.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">Sin pedidos para esta fecha.</div>
       )}
 
+      {!isLoading && orders.length > 0 && filteredOrders.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">Sin resultados para "{search}".</div>
+      )}
+
       {/* Lista de pedidos */}
       <div className="space-y-2">
-        {orders.map(order => (
+        {filteredOrders.map(order => (
           <Card
             key={order.id}
             className={`border-l-[3px] ${STATUS_BORDER[order.status]} transition-colors`}
@@ -294,7 +368,7 @@ export default function Pedidos() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminará el pedido de <strong>{deleteTarget?.customer_name}</strong>. Esta acción no se puede deshacer.
+              Se eliminará el pedido de <strong>{deleteTarget?.client_name}</strong>. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

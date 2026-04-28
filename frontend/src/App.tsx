@@ -4,6 +4,7 @@ import Sabores from './pages/Sabores'
 import Pedidos from './pages/Pedidos'
 import PedidoForm from './pages/PedidoForm'
 import Ingredientes from './pages/Ingredientes'
+import Clientes from './pages/Clientes'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: '/pedidos/nuevo', element: <PedidoForm /> },
       { path: '/pedidos/:id', element: <PedidoForm /> },
       { path: '/ingredientes', element: <Ingredientes /> },
+      { path: '/clientes', element: <Clientes /> },
       { path: '/', element: <Pedidos /> },
     ],
   },
