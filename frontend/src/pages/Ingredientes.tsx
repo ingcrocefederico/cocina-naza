@@ -7,7 +7,7 @@ import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Calculator, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Calculator, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import type { Ingredient, Unit } from '../types'
 
 // Price units the user can select when entering a purchase price
@@ -72,6 +72,7 @@ export default function Ingredientes() {
   const [form, setForm] = useState<IngredientForm>(emptyForm)
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null)
 
+  const [search, setSearch] = useState('')
   const [calcOpen, setCalcOpen] = useState(false)
   const [calcPrice, setCalcPrice] = useState('')
   const [calcSource, setCalcSource] = useState('kg')
@@ -127,6 +128,10 @@ export default function Ingredientes() {
 
   const isSaving = createIngredient.isPending || updateIngredient.isPending
 
+  const filteredIngredients = search.trim()
+    ? ingredients.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+    : ingredients
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -141,6 +146,16 @@ export default function Ingredientes() {
         </div>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Buscar ingrediente..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       {isLoading && <div className="text-muted-foreground">Cargando...</div>}
 
       {!isLoading && ingredients.length === 0 && (
@@ -149,7 +164,11 @@ export default function Ingredientes() {
         </div>
       )}
 
-      {ingredients.length > 0 && (
+      {!isLoading && ingredients.length > 0 && filteredIngredients.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">Sin resultados para "{search}".</div>
+      )}
+
+      {filteredIngredients.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>
@@ -160,7 +179,7 @@ export default function Ingredientes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {ingredients.map(ing => {
+            {filteredIngredients.map(ing => {
               const hasPrice = ing.price_per_unit && parseFloat(ing.price_per_unit) > 0
               const { bulk_unit, factor } = TABLE_BULK[ing.unit] ?? { bulk_unit: ing.unit, factor: 1 }
               const baseUnit = formatBaseUnit(ing.unit)
