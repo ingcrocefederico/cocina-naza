@@ -5,7 +5,7 @@ import type { Order, OrderStatus, CalculatorResult } from '../types'
 export type OrderItemInput = { flavor_id: string; quantity: number }
 
 export interface CreateOrderInput {
-  client_name: string
+  client_id: string
   address?: string
   date?: string
   status?: OrderStatus
@@ -16,7 +16,7 @@ export interface CreateOrderInput {
 
 export interface UpdateOrderInput {
   id: string
-  client_name?: string
+  client_id?: string
   address?: string
   date?: string
   status?: OrderStatus
