@@ -30,6 +30,7 @@ export interface Ingredient {
 export interface Order {
   id: string
   client_name: string
+  client_id: string | null
   address: string | null
   date: string
   status: 'pedido' | 'preparado' | 'entregado' | 'cobrado'
@@ -48,4 +49,27 @@ export interface OrderItem {
 
 export interface OrderWithItems extends Order {
   items: (OrderItem & { flavor_name: string; flavor_emoji: string; price_per_budin: string })[]
+}
+
+export interface Client {
+  id: string
+  name: string
+  address: string | null
+  phone: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BudinByFlavor {
+  flavor_name: string
+  emoji: string
+  quantity: number
+}
+
+export interface ClientWithStats extends Client {
+  debt: number
+  total_budines: number
+  budines_by_flavor: BudinByFlavor[]
+  estado: 'deudor' | 'al_dia'
 }
