@@ -57,14 +57,18 @@ export default function ClientSheet({ open, onOpenChange, editingClient, onSucce
       address: data.address || undefined,
       notes: data.notes || undefined,
     }
-    if (isEdit && editingClient) {
-      const res = await updateClient.mutateAsync({ id: editingClient.id, ...payload })
-      onSuccess?.(res.data)
-    } else {
-      const res = await createClient.mutateAsync(payload)
-      onSuccess?.(res.data)
+    try {
+      if (isEdit && editingClient) {
+        const res = await updateClient.mutateAsync({ id: editingClient.id, ...payload })
+        onSuccess?.(res.data)
+      } else {
+        const res = await createClient.mutateAsync(payload)
+        onSuccess?.(res.data)
+      }
+      onOpenChange(false)
+    } catch {
+      // mutation error surfaced by React Query; sheet stays open
     }
-    onOpenChange(false)
   }
 
   const isPending = createClient.isPending || updateClient.isPending

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import ClientSheet from '../components/ClientSheet'
-import type { Client, ClientWithStats } from '../types'
+import type { ClientWithStats } from '../types'
 
 type EstadoFilter = 'todos' | 'deudor' | 'al_dia'
 
@@ -31,7 +31,7 @@ export default function Clientes() {
   const [search, setSearch] = useState('')
   const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>('todos')
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingClient, setEditingClient] = useState<Client | null>(null)
+  const [editingClient, setEditingClient] = useState<ClientWithStats | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClientWithStats | null>(null)
 
   function openCreate() {
@@ -149,8 +149,8 @@ export default function Clientes() {
                 {/* Budines by flavor */}
                 {client.total_budines > 0 && (
                   <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
-                    {client.budines_by_flavor.map((b, i) => (
-                      <span key={i} className="text-xs text-muted-foreground">
+                    {client.budines_by_flavor.map((b) => (
+                      <span key={b.flavor_name} className="text-xs text-muted-foreground">
                         {b.emoji} {b.flavor_name} <span className="font-medium text-foreground">×{b.quantity}</span>
                       </span>
                     ))}
@@ -174,11 +174,11 @@ export default function Clientes() {
 
       <ClientSheet
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={(o) => { setSheetOpen(o); if (!o) setEditingClient(null) }}
         editingClient={editingClient}
       />
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(isOpen: boolean) => !isOpen && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
