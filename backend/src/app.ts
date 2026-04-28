@@ -7,6 +7,7 @@ import { authRouter } from './routes/auth'
 import { flavorsRouter } from './routes/flavors'
 import { ordersRouter } from './routes/orders'
 import { ingredientsRouter } from './routes/ingredients'
+import { clientsRouter } from './routes/clients'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -32,6 +33,7 @@ export function createApp() {
   app.use('/api/flavors', flavorsRouter)
   app.use('/api/orders', ordersRouter)
   app.use('/api/ingredients', ingredientsRouter)
+  app.use('/api/clients', clientsRouter)
 
   if (isProd) {
     const clientDist = path.join(__dirname, '../../frontend/dist')
