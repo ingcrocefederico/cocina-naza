@@ -188,7 +188,9 @@ export default function Pedidos() {
       )}
 
       {!isLoading && orders.length > 0 && filteredOrders.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground">Sin resultados para "{search}".</div>
+        <div className="text-center py-16 text-muted-foreground">
+          {search.trim() ? `Sin resultados para "${search}".` : 'Sin resultados.'}
+        </div>
       )}
 
       {/* Lista de pedidos */}
