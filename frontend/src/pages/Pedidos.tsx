@@ -10,7 +10,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users } from 'lucide-react'
+import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users, Download } from 'lucide-react'
+import { generatePedidosPDF } from '../lib/generatePedidosPDF'
 import type { Order, OrderStatus } from '../types'
 
 const STATUSES: OrderStatus[] = ['pedido', 'preparado', 'entregado', 'cobrado_efectivo', 'cobrado_transf']
@@ -322,9 +323,20 @@ export default function Pedidos() {
 
             {/* Vista Total */}
             {!calcLoading && calc && sheetView === 'total' && (
-              calc.totals.length === 0
-                ? <p className="text-sm text-muted-foreground text-center py-8">Sin datos de recetas para esta fecha.</p>
-                : calc.totals.map(ing => (
+              <>
+                <div className="flex justify-end pb-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs h-8"
+                    onClick={() => generatePedidosPDF(date, orders, calc)}
+                  >
+                    <Download className="w-3.5 h-3.5" /> Descargar PDF
+                  </Button>
+                </div>
+                {calc.totals.length === 0
+                  ? <p className="text-sm text-muted-foreground text-center py-8">Sin datos de recetas para esta fecha.</p>
+                  : calc.totals.map(ing => (
                   <div key={ing.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                     <span className="text-sm text-foreground font-medium">{ing.name}</span>
                     <div className="text-right">
@@ -336,7 +348,8 @@ export default function Pedidos() {
                       </p>
                     </div>
                   </div>
-                ))
+                ))}
+              </>
             )}
 
             {/* Vista Por sabor */}
