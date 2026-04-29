@@ -95,7 +95,7 @@ export default function Pedidos() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="grid grid-cols-2 gap-y-2">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold text-foreground">Pedidos</h1>
           <DatePicker
@@ -106,7 +106,7 @@ export default function Pedidos() {
             className="w-40"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -114,6 +114,8 @@ export default function Pedidos() {
           >
             <Users className="w-4 h-4 mr-1" /> Clientes
           </Button>
+        </div>
+        <div className="flex items-center">
           <Button
             variant="outline"
             size="sm"
@@ -122,6 +124,8 @@ export default function Pedidos() {
           >
             <FlaskConical className="w-4 h-4 mr-1" /> Ingredientes
           </Button>
+        </div>
+        <div className="flex justify-end">
           <Button onClick={() => navigate(`/pedidos/nuevo?date=${date}`)} size="sm">
             <Plus className="w-4 h-4 mr-1" /> Nuevo pedido
           </Button>
@@ -410,6 +414,8 @@ export default function Pedidos() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+
     </div>
   )
 }
