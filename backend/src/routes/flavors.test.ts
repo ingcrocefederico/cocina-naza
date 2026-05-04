@@ -129,12 +129,93 @@ describe('GET /api/flavors/:id/recipe', () => {
       unit: 'kg',
       quantity_per_budin: 0.5,
       price_per_unit: '1200.00',
+      is_common: false,
+      is_overridden: false,
     }
-    mockQuery.mockResolvedValue({ rows: [item] })
+    // First query: flavor lookup
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: false }] })
+    // Second query: recipe items
+    mockQuery.mockResolvedValueOnce({ rows: [item] })
     const res = await request(makeApp())
       .get('/api/flavors/f-1/recipe')
       .set('Cookie', authCookie())
     expect(res.status).toBe(200)
     expect(res.body[0].price_per_unit).toBe('1200.00')
+  })
+
+  it('returns own recipe items with is_common=false when uses_common_ingredients=false', async () => {
+    // First query: flavor lookup
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: false }] })
+    // Second query: recipe items
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 'ri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 500, price_per_unit: '0.005', is_common: false, is_overridden: false },
+      ],
+    })
+    const app = makeApp()
+    const res = await request(app).get('/api/flavors/f-1/recipe').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body[0].is_common).toBe(false)
+    expect(res.body[0].is_overridden).toBe(false)
+  })
+
+  it('returns 404 when flavor not found in GET /:id/recipe', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] })
+    const app = makeApp()
+    const res = await request(app).get('/api/flavors/nonexistent/recipe').set('Cookie', authCookie())
+    expect(res.status).toBe(404)
+  })
+
+  it('merges common and override items when uses_common_ingredients=true', async () => {
+    // First query: flavor lookup
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: true }] })
+    // commonRes: 2 common ingredients
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 500, price_per_unit: '0.005' },
+        { ingredient_id: 'ing-2', ingredient_name: 'Huevos', unit: 'unidad', quantity_per_budin: 2, price_per_unit: '1.00' },
+      ],
+    })
+    // recipeRes: one override for ing-1, one exclusive ing-3
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 'ri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 600, price_per_unit: '0.005' },
+        { id: 'ri-3', ingredient_id: 'ing-3', ingredient_name: 'Vainilla', unit: 'ml', quantity_per_budin: 10, price_per_unit: '2.00' },
+      ],
+    })
+    const app = makeApp()
+    const res = await request(app).get('/api/flavors/f-1/recipe').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    // ing-1: common with override
+    const harina = res.body.find((r: { ingredient_id: string }) => r.ingredient_id === 'ing-1')
+    expect(harina.is_common).toBe(true)
+    expect(harina.is_overridden).toBe(true)
+    expect(harina.quantity_per_budin).toBe(600)
+    // ing-2: common without override
+    const huevos = res.body.find((r: { ingredient_id: string }) => r.ingredient_id === 'ing-2')
+    expect(huevos.is_common).toBe(true)
+    expect(huevos.is_overridden).toBe(false)
+    expect(huevos.id).toBeNull()
+    // ing-3: exclusive
+    const vainilla = res.body.find((r: { ingredient_id: string }) => r.ingredient_id === 'ing-3')
+    expect(vainilla.is_common).toBe(false)
+    expect(vainilla.is_overridden).toBe(false)
+  })
+})
+
+describe('PUT /api/flavors/:id (uses_common_ingredients)', () => {
+  beforeEach(() => mockQuery.mockReset())
+
+  it('updates uses_common_ingredients flag', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 'f-1', name: 'Test', emoji: '', price_per_budin: '1000', active: true, uses_common_ingredients: false }],
+    })
+    const app = makeApp()
+    const res = await request(app)
+      .put('/api/flavors/f-1')
+      .set('Cookie', authCookie())
+      .send({ uses_common_ingredients: false })
+    expect(res.status).toBe(200)
+    expect(res.body.uses_common_ingredients).toBe(false)
   })
 })

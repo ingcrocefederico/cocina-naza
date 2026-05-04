@@ -147,7 +147,7 @@ flavorsRouter.get('/:id/recipe', async (req, res) => {
     const override = overrideMap.get(c.ingredient_id)
     return override
       ? { ...override, is_common: true, is_overridden: true }
-      : { id: null, ...c, is_common: true, is_overridden: false }
+      : { ...c, id: null, is_common: true, is_overridden: false }
   })
 
   const exclusiveItems = recipeRes.rows
