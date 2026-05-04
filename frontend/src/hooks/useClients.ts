@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import api from '../lib/api'
 import type { Client, ClientWithStats } from '../types'
 
@@ -30,7 +31,9 @@ export function useCreateClient() {
     mutationFn: (data: CreateClientInput) => api.post<Client>('/api/clients', data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clients'] })
+      toast.success('Cliente creado')
     },
+    onError: () => toast.error('Error al crear el cliente'),
   })
 }
 
@@ -41,7 +44,9 @@ export function useUpdateClient() {
       api.put<Client>(`/api/clients/${id}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clients'] })
+      toast.success('Cliente actualizado')
     },
+    onError: () => toast.error('Error al actualizar el cliente'),
   })
 }
 
@@ -51,6 +56,8 @@ export function useDeleteClient() {
     mutationFn: (id: string) => api.delete(`/api/clients/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clients'] })
+      toast.success('Cliente eliminado')
     },
+    onError: () => toast.error('Error al eliminar el cliente'),
   })
 }

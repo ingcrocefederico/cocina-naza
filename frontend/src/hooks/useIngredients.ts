@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import api from '../lib/api'
 import type { Ingredient, CalculatorResult } from '../types'
 
@@ -18,7 +19,9 @@ export function useCreateIngredient() {
       qc.invalidateQueries({ queryKey: ['ingredients'] })
       qc.invalidateQueries({ queryKey: ['flavors'] })
       qc.invalidateQueries({ queryKey: ['calculator'] })
+      toast.success('Ingrediente creado')
     },
+    onError: () => toast.error('Error al crear el ingrediente'),
   })
 }
 
@@ -31,7 +34,9 @@ export function useUpdateIngredient() {
       qc.invalidateQueries({ queryKey: ['ingredients'] })
       qc.invalidateQueries({ queryKey: ['flavors'] })
       qc.invalidateQueries({ queryKey: ['calculator'] })
+      toast.success('Ingrediente actualizado')
     },
+    onError: () => toast.error('Error al actualizar el ingrediente'),
   })
 }
 
@@ -43,7 +48,9 @@ export function useDeleteIngredient() {
       qc.invalidateQueries({ queryKey: ['ingredients'] })
       qc.invalidateQueries({ queryKey: ['flavors'] })
       qc.invalidateQueries({ queryKey: ['calculator'] })
+      toast.success('Ingrediente eliminado')
     },
+    onError: () => toast.error('Error al eliminar el ingrediente'),
   })
 }
 

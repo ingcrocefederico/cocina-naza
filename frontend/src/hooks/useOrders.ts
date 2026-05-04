@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import api from '../lib/api'
 import type { Order, OrderStatus, CalculatorResult } from '../types'
 
@@ -71,7 +72,9 @@ export function useCreateOrder() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['orders', vars.date] })
       qc.invalidateQueries({ queryKey: ['order-counts'] })
+      toast.success('Pedido creado')
     },
+    onError: () => toast.error('Error al crear el pedido'),
   })
 }
 
@@ -83,7 +86,9 @@ export function useUpdateOrder() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orders'] })
       qc.invalidateQueries({ queryKey: ['order-counts'] })
+      toast.success('Pedido actualizado')
     },
+    onError: () => toast.error('Error al actualizar el pedido'),
   })
 }
 
@@ -94,6 +99,8 @@ export function useDeleteOrder() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orders'] })
       qc.invalidateQueries({ queryKey: ['order-counts'] })
+      toast.success('Pedido eliminado')
     },
+    onError: () => toast.error('Error al eliminar el pedido'),
   })
 }

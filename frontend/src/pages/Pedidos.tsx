@@ -10,7 +10,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users, Download } from 'lucide-react'
+import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users, Download, Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { generatePedidosPDF } from '../lib/generatePedidosPDF'
 import type { Order, OrderStatus } from '../types'
 
@@ -52,6 +53,9 @@ export default function Pedidos() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'deuda' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null)
 
+  const [statusEditOrder, setStatusEditOrder] = useState<Order | null>(null)
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
+
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetView, setSheetView] = useState<SheetView>('total')
   const [openFlavors, setOpenFlavors] = useState<Set<string>>(new Set())
@@ -71,8 +75,23 @@ export default function Pedidos() {
     setStatusFilter(null)
   }
 
+  function addPending(id: string) {
+    setPendingIds(prev => new Set(prev).add(id))
+  }
+  function removePending(id: string) {
+    setPendingIds(prev => { const next = new Set(prev); next.delete(id); return next })
+  }
+
   function changeStatus(order: Order, status: OrderStatus) {
-    updateOrder.mutate({ id: order.id, status })
+    addPending(order.id)
+    updateOrder.mutate({ id: order.id, status }, { onSettled: () => removePending(order.id) })
+  }
+
+  function changeAllStatuses(status: OrderStatus) {
+    orders.forEach(o => {
+      addPending(o.id)
+      updateOrder.mutate({ id: o.id, status }, { onSettled: () => removePending(o.id) })
+    })
   }
 
   const COBRADO_STATUSES = ['cobrado', 'cobrado_efectivo', 'cobrado_transf'] as const
@@ -161,7 +180,7 @@ export default function Pedidos() {
               className="pl-9"
             />
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {([null, 'deuda', 'pedido', 'preparado', 'entregado', 'cobrado_efectivo', 'cobrado_transf'] as const).map(s => {
               const active = statusFilter === s
               const labels: Record<string, string> = {
@@ -195,6 +214,16 @@ export default function Pedidos() {
                 </button>
               )
             })}
+            <div className="h-4 w-px bg-border mx-0.5" />
+            <SelectSheet
+              value=""
+              onValueChange={val => changeAllStatuses(val as OrderStatus)}
+              options={STATUSES.map(s => ({ value: s, label: s }))}
+              renderOption={opt => <StatusBadge status={opt.value as OrderStatus} />}
+              renderValue={() => <span className="text-muted-foreground">Cambiar todos</span>}
+              title="Cambiar estado de todos los pedidos"
+              className="h-6 text-xs border border-dashed border-border/70 px-2 shadow-none bg-transparent w-fit"
+            />
           </div>
         </div>
       )}
@@ -213,66 +242,72 @@ export default function Pedidos() {
 
       {/* Lista de pedidos */}
       <div className="space-y-2">
-        {filteredOrders.map(order => (
-          <Card
-            key={order.id}
-            className={`border-l-[3px] ${STATUS_BORDER[order.status]} transition-colors`}
-          >
-            <CardContent className="px-3 py-2.5 flex gap-2">
-              {/* Izquierda: nombre + sabores + dirección/notas */}
-              <div className="flex-1 min-w-0">
-                <span className="font-semibold text-foreground text-sm truncate block">{order.client_name}</span>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                  {order.items.map((item, idx) => (
-                    <span key={idx} className="text-xs text-muted-foreground whitespace-nowrap">
-                      {item.flavor_emoji} {item.flavor_name} <span className="font-medium text-foreground">×{item.quantity}</span>
-                    </span>
-                  ))}
-                </div>
-                {(order.address || order.notes) && (
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {order.address && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-0.5 truncate">
-                        <MapPin className="w-3 h-3 shrink-0" />{order.address}
+        {filteredOrders.map(order => {
+          const isPending = pendingIds.has(order.id)
+          return (
+            <Card
+              key={order.id}
+              className={cn(
+                `border-l-[3px] ${STATUS_BORDER[order.status]} transition-all duration-200`,
+                isPending && 'opacity-50 animate-pulse pointer-events-none'
+              )}
+            >
+              <CardContent className="px-3 py-2.5 flex gap-2">
+                {/* Izquierda: nombre + sabores + dirección/notas */}
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-foreground text-sm truncate block">{order.client_name}</span>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                    {order.items.map((item, idx) => (
+                      <span key={idx} className="text-xs text-muted-foreground whitespace-nowrap">
+                        {item.flavor_emoji} {item.flavor_name} <span className="font-medium text-foreground">×{item.quantity}</span>
                       </span>
-                    )}
-                    {order.notes && (
-                      <span className="text-xs text-muted-foreground italic truncate">{order.notes}</span>
-                    )}
+                    ))}
                   </div>
-                )}
-              </div>
-
-              {/* Derecha: arriba select+monto, abajo edit+remove */}
-              <div className="flex flex-col items-end justify-between gap-1 shrink-0">
-                <div className="flex items-center gap-1.5">
-                  <SelectSheet
-                    value={order.status}
-                    onValueChange={val => changeStatus(order, val as OrderStatus)}
-                    options={STATUSES.map(s => ({ value: s, label: s }))}
-                    renderValue={opt => opt ? <StatusBadge status={opt.value as OrderStatus} /> : <StatusBadge status={order.status} />}
-                    renderOption={opt => <StatusBadge status={opt.value as OrderStatus} />}
-                    title="Estado del pedido"
-                    className="w-fit h-7 text-xs px-2 border-0 shadow-none bg-transparent"
-                  />
-                  {order.sale_price && (
-                    <span className="text-sm font-semibold text-primary tabular-nums">
-                      ${parseFloat(order.sale_price).toLocaleString('es-AR')}
-                    </span>
+                  {(order.address || order.notes) && (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {order.address && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-0.5 truncate">
+                          <MapPin className="w-3 h-3 shrink-0" />{order.address}
+                        </span>
+                      )}
+                      {order.notes && (
+                        <span className="text-xs text-muted-foreground italic truncate">{order.notes}</span>
+                      )}
+                    </div>
                   )}
                 </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => navigate(`/pedidos/${order.id}?date=${date}`)}>
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" onClick={() => setDeleteTarget(order)}>
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
+
+                {/* Derecha: arriba select+monto, abajo edit+remove */}
+                <div className="flex flex-col items-end justify-between gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => setStatusEditOrder(order)}
+                      className="flex h-7 w-fit items-center gap-1 rounded-md px-2 text-xs bg-transparent hover:bg-muted/50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <StatusBadge status={order.status} />
+                      <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
+                    </button>
+                    {order.sale_price && (
+                      <span className="text-sm font-semibold text-primary tabular-nums">
+                        ${parseFloat(order.sale_price).toLocaleString('es-AR')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" disabled={isPending} onClick={() => navigate(`/pedidos/${order.id}?date=${date}`)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 cursor-pointer" disabled={isPending} onClick={() => setDeleteTarget(order)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {/* Sheet de ingredientes */}
@@ -391,6 +426,43 @@ export default function Pedidos() {
                   )
                 })
             )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Sheet de cambio de estado individual */}
+      <Sheet open={!!statusEditOrder} onOpenChange={open => !open && setStatusEditOrder(null)}>
+        <SheetContent side="bottom" className="flex flex-col gap-0 p-0 max-h-[80vh] rounded-t-2xl">
+          <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-muted-foreground/25 shrink-0" />
+          <SheetHeader className="px-5 pt-3 pb-2 shrink-0">
+            <SheetTitle className="text-base">Estado del pedido</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {STATUSES.map(s => {
+              const isSelected = statusEditOrder?.status === s
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  className={cn(
+                    'flex w-full items-center gap-3 px-5 py-3.5 text-sm transition-colors text-left',
+                    isSelected ? 'bg-muted/50' : 'active:bg-muted/40'
+                  )}
+                  onClick={() => {
+                    if (statusEditOrder) changeStatus(statusEditOrder, s)
+                    setStatusEditOrder(null)
+                  }}
+                >
+                  <span className="w-4 shrink-0 flex items-center justify-center">
+                    {isSelected && <Check className="h-4 w-4 text-primary" />}
+                  </span>
+                  <span className="flex-1">
+                    <StatusBadge status={s} />
+                  </span>
+                </button>
+              )
+            })}
+            <div className="h-6 shrink-0" />
           </div>
         </SheetContent>
       </Sheet>
