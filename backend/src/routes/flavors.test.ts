@@ -68,6 +68,27 @@ describe('GET /api/flavors', () => {
   })
 })
 
+describe('GET /api/flavors — integral cost CTE', () => {
+  beforeEach(() => mockQuery.mockReset())
+
+  it('excludes qty=0 exclusion markers from cost', async () => {
+    const flavor = {
+      id: 'f-int',
+      name: '(Int) Vainilla',
+      emoji: '🍦',
+      price_per_budin: '1500.00',
+      active: true,
+      cost_per_budin: '300.00',
+      profit_per_budin: '1200.00',
+      uses_common_ingredients: true,
+    }
+    mockQuery.mockResolvedValue({ rows: [flavor] })
+    const res = await request(makeApp()).get('/api/flavors').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body[0].cost_per_budin).toBe('300.00')
+  })
+})
+
 describe('POST /api/flavors', () => {
   beforeEach(() => mockQuery.mockReset())
 
@@ -131,9 +152,10 @@ describe('GET /api/flavors/:id/recipe', () => {
       price_per_unit: '1200.00',
       is_common: false,
       is_overridden: false,
+      is_deleted: false,
     }
     // First query: flavor lookup
-    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: false }] })
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: false, is_integral: false }] })
     // Second query: recipe items
     mockQuery.mockResolvedValueOnce({ rows: [item] })
     const res = await request(makeApp())
@@ -141,15 +163,16 @@ describe('GET /api/flavors/:id/recipe', () => {
       .set('Cookie', authCookie())
     expect(res.status).toBe(200)
     expect(res.body[0].price_per_unit).toBe('1200.00')
+    expect(res.body[0].is_deleted).toBe(false)
   })
 
   it('returns own recipe items with is_common=false when uses_common_ingredients=false', async () => {
     // First query: flavor lookup
-    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: false }] })
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: false, is_integral: false }] })
     // Second query: recipe items
     mockQuery.mockResolvedValueOnce({
       rows: [
-        { id: 'ri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 500, price_per_unit: '0.005', is_common: false, is_overridden: false },
+        { id: 'ri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 500, price_per_unit: '0.005', is_common: false, is_overridden: false, is_deleted: false },
       ],
     })
     const app = makeApp()
@@ -168,7 +191,7 @@ describe('GET /api/flavors/:id/recipe', () => {
 
   it('merges common and override items when uses_common_ingredients=true', async () => {
     // First query: flavor lookup
-    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: true }] })
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: true, is_integral: false }] })
     // commonRes: 2 common ingredients
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -200,6 +223,53 @@ describe('GET /api/flavors/:id/recipe', () => {
     const vainilla = res.body.find((r: { ingredient_id: string }) => r.ingredient_id === 'ing-3')
     expect(vainilla.is_common).toBe(false)
     expect(vainilla.is_overridden).toBe(false)
+    // all items should have is_deleted=false
+    expect(res.body.every((r: { is_deleted: boolean }) => !r.is_deleted)).toBe(true)
+  })
+})
+
+describe('GET /api/flavors/:id/recipe — integral + is_deleted', () => {
+  beforeEach(() => mockQuery.mockReset())
+
+  it('includes integral common items for integral flavors', async () => {
+    // flavor lookup — is_integral: true
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: true, is_integral: true }] })
+    // commonRes: one 'all' + one 'integral' item (the query filters by applies_to)
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { ingredient_id: 'ing-1', ingredient_name: 'Huevos', unit: 'unidad', quantity_per_budin: 2, price_per_unit: '1.00' },
+        { ingredient_id: 'ing-2', ingredient_name: 'Harina integral', unit: 'g', quantity_per_budin: 100, price_per_unit: '0.003' },
+      ],
+    })
+    // recipeRes: empty (no overrides)
+    mockQuery.mockResolvedValueOnce({ rows: [] })
+    const res = await request(makeApp()).get('/api/flavors/f-int/recipe').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(2)
+    expect(res.body.every((r: { is_common: boolean }) => r.is_common)).toBe(true)
+    expect(res.body.every((r: { is_deleted: boolean }) => r.is_deleted === false)).toBe(true)
+  })
+
+  it('returns is_deleted=true for qty=0 override and includes it in response', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: true, is_integral: false }] })
+    // commonRes: Manteca
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { ingredient_id: 'ing-manteca', ingredient_name: 'Manteca', unit: 'g', quantity_per_budin: 70, price_per_unit: '0.01' },
+      ],
+    })
+    // recipeRes: qty=0 exclusion marker for Manteca
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 'ri-x', ingredient_id: 'ing-manteca', ingredient_name: 'Manteca', unit: 'g', quantity_per_budin: 0, price_per_unit: '0.01' },
+      ],
+    })
+    const res = await request(makeApp()).get('/api/flavors/f-1/recipe').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    const manteca = res.body.find((r: { ingredient_id: string }) => r.ingredient_id === 'ing-manteca')
+    expect(manteca.is_deleted).toBe(true)
+    expect(manteca.is_common).toBe(true)
+    expect(manteca.is_overridden).toBe(false)
   })
 })
 
