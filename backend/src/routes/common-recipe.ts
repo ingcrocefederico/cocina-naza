@@ -21,6 +21,10 @@ commonRecipeRouter.get('/', async (_req, res) => {
 
 commonRecipeRouter.put('/', async (req, res) => {
   const items = req.body as { ingredient_id: string; quantity_per_budin: number }[]
+  if (!Array.isArray(items)) {
+    res.status(400).json({ error: 'body must be an array' })
+    return
+  }
   await query('DELETE FROM common_recipe_items')
   if (items.length > 0) {
     const values = items.map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`).join(', ')
