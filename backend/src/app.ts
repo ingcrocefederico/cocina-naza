@@ -8,6 +8,7 @@ import { flavorsRouter } from './routes/flavors'
 import { ordersRouter } from './routes/orders'
 import { ingredientsRouter } from './routes/ingredients'
 import { clientsRouter } from './routes/clients'
+import { commonRecipeRouter } from './routes/common-recipe'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -34,6 +35,7 @@ export function createApp() {
   app.use('/api/orders', ordersRouter)
   app.use('/api/ingredients', ingredientsRouter)
   app.use('/api/clients', clientsRouter)
+  app.use('/api/common-recipe', commonRecipeRouter)
 
   if (isProd) {
     const clientDist = path.join(__dirname, '../../frontend/dist')
