@@ -56,6 +56,7 @@ export interface RecipeItem {
   price_per_unit: string
   is_common: boolean
   is_overridden: boolean
+  is_deleted: boolean
 }
 
 export interface CommonRecipeItem {
@@ -65,6 +66,7 @@ export interface CommonRecipeItem {
   unit: Unit
   quantity_per_budin: number
   price_per_unit: string
+  applies_to: 'all' | 'integral'
 }
 
 export interface Client {

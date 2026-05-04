@@ -13,7 +13,7 @@ export function useCommonRecipe() {
 export function useSaveCommonRecipe() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (items: { ingredient_id: string; quantity_per_budin: number }[]) =>
+    mutationFn: (items: { ingredient_id: string; quantity_per_budin: number; applies_to: 'all' | 'integral' }[]) =>
       api.put('/api/common-recipe', items),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['common-recipe'] })
