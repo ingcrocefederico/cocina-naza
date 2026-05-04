@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useIngredients, useCreateIngredient, useUpdateIngredient, useDeleteIngredient } from '../hooks/useIngredients'
+import { useCommonRecipe, useSaveCommonRecipe } from '../hooks/useCommonRecipe'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -7,8 +8,10 @@ import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Calculator, Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import type { Ingredient, Unit } from '../types'
+import { IngredientCombobox } from '@/components/IngredientCombobox'
+import { Badge } from '@/components/ui/badge'
+import { Calculator, Lock, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import type { Ingredient, Unit, CommonRecipeItem } from '../types'
 
 // Price units the user can select when entering a purchase price
 const PRICE_UNITS = ['kg', 'g', 'L', 'ml', 'uni'] as const
@@ -61,6 +64,9 @@ interface IngredientForm {
 
 const emptyForm: IngredientForm = { name: '', price_unit: 'kg', bulk_price: '' }
 
+interface CommonEditRow { key: number; ingredient_id: string; quantity_per_budin: string }
+let commonRowKey = 0
+
 export default function Ingredientes() {
   const { data: ingredients = [], isLoading } = useIngredients()
   const createIngredient = useCreateIngredient()
@@ -77,6 +83,40 @@ export default function Ingredientes() {
   const [calcPrice, setCalcPrice] = useState('')
   const [calcSource, setCalcSource] = useState('kg')
   const [calcTarget, setCalcTarget] = useState('g')
+
+  const { data: commonRecipe = [] } = useCommonRecipe()
+  const saveCommonRecipe = useSaveCommonRecipe()
+  const [commonSheetOpen, setCommonSheetOpen] = useState(false)
+  const [commonRows, setCommonRows] = useState<CommonEditRow[]>([])
+
+  function openCommonEditor() {
+    setCommonRows(commonRecipe.map((r: CommonRecipeItem) => ({
+      key: commonRowKey++,
+      ingredient_id: r.ingredient_id,
+      quantity_per_budin: String(r.quantity_per_budin),
+    })))
+    setCommonSheetOpen(true)
+  }
+
+  function addCommonRow() {
+    setCommonRows(r => [...r, { key: commonRowKey++, ingredient_id: '', quantity_per_budin: '' }])
+  }
+
+  function removeCommonRow(key: number) {
+    setCommonRows(r => r.filter(row => row.key !== key))
+  }
+
+  function updateCommonRow(key: number, field: 'ingredient_id' | 'quantity_per_budin', value: string) {
+    setCommonRows(r => r.map(row => row.key === key ? { ...row, [field]: value } : row))
+  }
+
+  async function saveCommon() {
+    const items = commonRows
+      .filter(r => r.ingredient_id && r.quantity_per_budin)
+      .map(r => ({ ingredient_id: r.ingredient_id, quantity_per_budin: parseFloat(r.quantity_per_budin) }))
+    await saveCommonRecipe.mutateAsync(items)
+    setCommonSheetOpen(false)
+  }
 
   function handleCalcSourceChange(src: string) {
     setCalcSource(src)
@@ -145,6 +185,97 @@ export default function Ingredientes() {
           </Button>
         </div>
       </div>
+
+      {/* Ingredientes comunes de budines */}
+      <div className="rounded-lg border border-border p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-foreground">Ingredientes comunes de budines</h2>
+          </div>
+          <Button variant="outline" size="sm" className="cursor-pointer" onClick={openCommonEditor}>
+            <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+          </Button>
+        </div>
+        {commonRecipe.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sin ingredientes comunes definidos.</p>
+        ) : (
+          <div className="space-y-1">
+            {commonRecipe.map(item => (
+              <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
+                <span className="text-foreground">{item.ingredient_name}</span>
+                <span className="text-muted-foreground tabular-nums">
+                  {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Sheet editor for common recipe */}
+      <Sheet open={commonSheetOpen} onOpenChange={setCommonSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+          <SheetHeader className="px-6 pt-6 pb-4">
+            <SheetTitle>Ingredientes comunes de budines</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Estos ingredientes se comparten en todos los budines que usen la receta común. Editarlos afecta a todos.
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-foreground">Ingredientes</span>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={addCommonRow}>
+                <Plus className="w-3.5 h-3.5 mr-1" /> Ingrediente
+              </Button>
+            </div>
+            {commonRows.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Sin ingredientes. Agregá uno.</p>
+            )}
+            {commonRows.map(row => {
+              const ing = ingredients.find(i => i.id === row.ingredient_id)
+              return (
+                <div key={row.key} className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <IngredientCombobox
+                      value={row.ingredient_id}
+                      onChange={id => updateCommonRow(row.key, 'ingredient_id', id)}
+                      allowCreate
+                    />
+                  </div>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    className="w-20 shrink-0"
+                    placeholder="0"
+                    value={row.quantity_per_budin}
+                    onChange={e => updateCommonRow(row.key, 'quantity_per_budin', e.target.value.replace(/[^0-9]/g, ''))}
+                  />
+                  {ing && (
+                    <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
+                      {ing.unit === 'unidad' ? 'uni' : ing.unit}
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={() => removeCommonRow(row.key)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+          <SheetFooter className="gap-2 px-6 py-4 border-t border-border">
+            <Button variant="outline" className="cursor-pointer" onClick={() => setCommonSheetOpen(false)}>Cancelar</Button>
+            <Button className="cursor-pointer" onClick={saveCommon} disabled={saveCommonRecipe.isPending}>
+              {saveCommonRecipe.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
