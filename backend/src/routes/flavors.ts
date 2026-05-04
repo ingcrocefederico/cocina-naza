@@ -146,7 +146,7 @@ flavorsRouter.get('/:id/recipe', async (req, res) => {
        FROM common_recipe_items cri
        JOIN ingredients i ON i.id = cri.ingredient_id
        WHERE cri.applies_to = 'all' OR ($1 AND cri.applies_to = 'integral')
-       ORDER BY cri.ingredient_id, (cri.applies_to = 'integral') DESC, i.name`,
+       ORDER BY cri.ingredient_id, (cri.applies_to = 'integral') DESC`,
       [isIntegral]
     ),
     query<{ id: string; ingredient_id: string; ingredient_name: string; unit: string; quantity_per_budin: number; price_per_unit: string }>(
