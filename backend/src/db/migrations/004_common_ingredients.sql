@@ -10,8 +10,13 @@ CREATE TABLE common_recipe_items (
 
 ALTER TABLE flavors ADD COLUMN uses_common_ingredients BOOLEAN NOT NULL DEFAULT false;
 
+COMMENT ON COLUMN flavors.uses_common_ingredients IS
+  'When true, this flavor inherits common_recipe_items and only stores overrides/exclusives in recipe_items.';
+
 -- Data migration: auto-detect common ingredients from existing active flavors
 -- An ingredient is "common" if it appears in ALL active flavors with the SAME quantity.
+
+BEGIN;
 
 WITH flavor_count AS (
   SELECT COUNT(*) AS total FROM flavors WHERE active = true
@@ -39,7 +44,10 @@ DELETE FROM recipe_items
 WHERE ingredient_id IN (SELECT ingredient_id FROM common_recipe_items)
   AND flavor_id IN (SELECT id FROM flavors WHERE active = true);
 
--- Mark all active flavors as using common ingredients (they all had the common set by definition)
+-- All active flavors had the full set of common ingredients by construction (occurrences = total above),
+-- so flagging all active flavors is safe as long as common_recipe_items is non-empty.
 UPDATE flavors SET uses_common_ingredients = true
 WHERE active = true
   AND EXISTS (SELECT 1 FROM common_recipe_items);
+
+COMMIT;
