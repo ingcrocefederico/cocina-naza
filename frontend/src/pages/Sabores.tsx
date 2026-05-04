@@ -125,7 +125,7 @@ export default function Sabores() {
     setCommonItems(items =>
       items.map(item =>
         item.ingredient_id === ingredient_id
-          ? { ...item, is_overridden: true, override_quantity: String(item.quantity_per_budin) }
+          ? { ...item, is_overridden: true, override_quantity: String(Math.round(item.quantity_per_budin)) }
           : item
       )
     )
@@ -178,6 +178,7 @@ export default function Sabores() {
   async function handleToggleCommon(value: boolean) {
     if (!editing) return
     await updateFlavor.mutateAsync({ id: editing.id, uses_common_ingredients: value })
+    setEditing(prev => prev ? { ...prev, uses_common_ingredients: value } : null)
     if (!value) setCommonItems([])
   }
 
