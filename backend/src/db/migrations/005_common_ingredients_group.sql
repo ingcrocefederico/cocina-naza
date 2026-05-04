@@ -34,6 +34,7 @@ DELETE FROM recipe_items ri
 USING flavors f, common_recipe_items cri
 WHERE ri.flavor_id = f.id
   AND f.active = true
+  AND f.uses_common_ingredients = true
   AND ri.ingredient_id = cri.ingredient_id
   AND cri.applies_to = 'all'
   AND ri.quantity_per_budin = cri.quantity_per_budin;
@@ -45,6 +46,7 @@ DELETE FROM recipe_items ri
 USING flavors f, common_recipe_items cri
 WHERE ri.flavor_id = f.id
   AND f.active = true
+  AND f.uses_common_ingredients = true
   AND f.name LIKE '(Int)%'
   AND ri.ingredient_id = cri.ingredient_id
   AND cri.applies_to = 'integral'
@@ -58,7 +60,7 @@ SELECT f.id, i.id, 0
 FROM flavors f
 CROSS JOIN ingredients i
 WHERE f.name IN ('Carrot Cake', '(Int) Carrot Cake')
-  AND f.active = true
-  AND i.name IN ('Manteca', 'Leche', 'Polvo de hornear');
+  AND i.name IN ('Manteca', 'Leche', 'Polvo de hornear')
+ON CONFLICT (flavor_id, ingredient_id) DO NOTHING;
 
 COMMIT;
