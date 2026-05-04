@@ -9,7 +9,31 @@ flavorsRouter.use(requireAuth)
 
 flavorsRouter.get('/', async (_req, res) => {
   const result = await query<Flavor>(
-    `SELECT
+    `WITH effective_recipe AS (
+       SELECT ri.flavor_id, ri.ingredient_id, ri.quantity_per_budin
+       FROM recipe_items ri
+       JOIN flavors f ON f.id = ri.flavor_id
+       WHERE f.active = true AND f.uses_common_ingredients = false
+
+       UNION ALL
+
+       SELECT f.id AS flavor_id,
+              cri.ingredient_id,
+              COALESCE(ri.quantity_per_budin, cri.quantity_per_budin) AS quantity_per_budin
+       FROM flavors f
+       CROSS JOIN common_recipe_items cri
+       LEFT JOIN recipe_items ri ON ri.flavor_id = f.id AND ri.ingredient_id = cri.ingredient_id
+       WHERE f.active = true AND f.uses_common_ingredients = true
+
+       UNION ALL
+
+       SELECT ri.flavor_id, ri.ingredient_id, ri.quantity_per_budin
+       FROM recipe_items ri
+       JOIN flavors f ON f.id = ri.flavor_id
+       WHERE f.active = true AND f.uses_common_ingredients = true
+         AND ri.ingredient_id NOT IN (SELECT ingredient_id FROM common_recipe_items)
+     )
+     SELECT
        f.id,
        f.name,
        f.emoji,
@@ -17,13 +41,14 @@ flavorsRouter.get('/', async (_req, res) => {
        f.active,
        f.created_at,
        f.preparation,
-       COALESCE(SUM(ri.quantity_per_budin * i.price_per_unit), 0) AS cost_per_budin,
-       f.price_per_budin - COALESCE(SUM(ri.quantity_per_budin * i.price_per_unit), 0) AS profit_per_budin
+       f.uses_common_ingredients,
+       COALESCE(SUM(er.quantity_per_budin * i.price_per_unit), 0) AS cost_per_budin,
+       f.price_per_budin - COALESCE(SUM(er.quantity_per_budin * i.price_per_unit), 0) AS profit_per_budin
      FROM flavors f
-     LEFT JOIN recipe_items ri ON ri.flavor_id = f.id
-     LEFT JOIN ingredients i ON i.id = ri.ingredient_id
+     LEFT JOIN effective_recipe er ON er.flavor_id = f.id
+     LEFT JOIN ingredients i ON i.id = er.ingredient_id
      WHERE f.active = true
-     GROUP BY f.id, f.name, f.emoji, f.price_per_budin, f.active, f.created_at, f.preparation
+     GROUP BY f.id, f.name, f.emoji, f.price_per_budin, f.active, f.created_at, f.preparation, f.uses_common_ingredients
      ORDER BY f.name`
   )
   res.json(result.rows)
@@ -43,15 +68,16 @@ flavorsRouter.post('/', async (req, res) => {
 })
 
 flavorsRouter.put('/:id', async (req, res) => {
-  const { name, emoji, price_per_budin, active } = req.body as Partial<Flavor>
+  const { name, emoji, price_per_budin, active, uses_common_ingredients } = req.body as Partial<Flavor> & { uses_common_ingredients?: boolean }
   const result = await query<Flavor>(
     `UPDATE flavors SET
-       name            = COALESCE($1, name),
-       emoji           = COALESCE($2, emoji),
-       price_per_budin = COALESCE($3, price_per_budin),
-       active          = COALESCE($4, active)
-     WHERE id = $5 RETURNING *`,
-    [name ?? null, emoji ?? null, price_per_budin ?? null, active ?? null, req.params.id]
+       name                    = COALESCE($1, name),
+       emoji                   = COALESCE($2, emoji),
+       price_per_budin         = COALESCE($3, price_per_budin),
+       active                  = COALESCE($4, active),
+       uses_common_ingredients = COALESCE($5, uses_common_ingredients)
+     WHERE id = $6 RETURNING *`,
+    [name ?? null, emoji ?? null, price_per_budin ?? null, active ?? null, uses_common_ingredients ?? null, req.params.id]
   )
   if (!result.rows.length) {
     res.status(404).json({ error: 'Flavor not found' })
@@ -66,22 +92,69 @@ flavorsRouter.delete('/:id', async (req, res) => {
 })
 
 flavorsRouter.get('/:id/recipe', async (req, res) => {
-  const result = await query<{
-    id: string
-    ingredient_id: string
-    ingredient_name: string
-    unit: string
-    quantity_per_budin: number
-    price_per_unit: string
-  }>(
-    `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ROUND(ri.quantity_per_budin)::integer AS quantity_per_budin, i.price_per_unit
-     FROM recipe_items ri
-     JOIN ingredients i ON i.id = ri.ingredient_id
-     WHERE ri.flavor_id = $1
-     ORDER BY i.name`,
+  const flavorRes = await query<{ uses_common_ingredients: boolean }>(
+    'SELECT uses_common_ingredients FROM flavors WHERE id = $1',
     [req.params.id]
   )
-  res.json(result.rows)
+  if (!flavorRes.rows.length) {
+    res.status(404).json({ error: 'Flavor not found' })
+    return
+  }
+  const usesCommon = flavorRes.rows[0].uses_common_ingredients
+
+  if (!usesCommon) {
+    const result = await query<{
+      id: string; ingredient_id: string; ingredient_name: string
+      unit: string; quantity_per_budin: number; price_per_unit: string
+      is_common: boolean; is_overridden: boolean
+    }>(
+      `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit,
+              ROUND(ri.quantity_per_budin)::integer AS quantity_per_budin, i.price_per_unit,
+              false AS is_common, false AS is_overridden
+       FROM recipe_items ri
+       JOIN ingredients i ON i.id = ri.ingredient_id
+       WHERE ri.flavor_id = $1
+       ORDER BY i.name`,
+      [req.params.id]
+    )
+    res.json(result.rows)
+    return
+  }
+
+  const [commonRes, recipeRes] = await Promise.all([
+    query<{ ingredient_id: string; ingredient_name: string; unit: string; quantity_per_budin: number; price_per_unit: string }>(
+      `SELECT cri.ingredient_id, i.name AS ingredient_name, i.unit,
+              ROUND(cri.quantity_per_budin)::integer AS quantity_per_budin, i.price_per_unit
+       FROM common_recipe_items cri
+       JOIN ingredients i ON i.id = cri.ingredient_id
+       ORDER BY i.name`
+    ),
+    query<{ id: string; ingredient_id: string; ingredient_name: string; unit: string; quantity_per_budin: number; price_per_unit: string }>(
+      `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit,
+              ROUND(ri.quantity_per_budin)::integer AS quantity_per_budin, i.price_per_unit
+       FROM recipe_items ri
+       JOIN ingredients i ON i.id = ri.ingredient_id
+       WHERE ri.flavor_id = $1
+       ORDER BY i.name`,
+      [req.params.id]
+    ),
+  ])
+
+  const overrideMap = new Map(recipeRes.rows.map(r => [r.ingredient_id, r]))
+  const commonIngredientIds = new Set(commonRes.rows.map(r => r.ingredient_id))
+
+  const commonItems = commonRes.rows.map(c => {
+    const override = overrideMap.get(c.ingredient_id)
+    return override
+      ? { ...override, is_common: true, is_overridden: true }
+      : { id: null, ...c, is_common: true, is_overridden: false }
+  })
+
+  const exclusiveItems = recipeRes.rows
+    .filter(r => !commonIngredientIds.has(r.ingredient_id))
+    .map(r => ({ ...r, is_common: false, is_overridden: false }))
+
+  res.json([...commonItems, ...exclusiveItems])
 })
 
 flavorsRouter.put('/:id/recipe', async (req, res) => {
