@@ -64,7 +64,7 @@ interface IngredientForm {
 
 const emptyForm: IngredientForm = { name: '', price_unit: 'kg', bulk_price: '' }
 
-interface CommonEditRow { key: number; ingredient_id: string; quantity_per_budin: string }
+interface CommonEditRow { key: number; ingredient_id: string; quantity_per_budin: string; applies_to: 'all' | 'integral' }
 let commonRowKey = 0
 
 export default function Ingredientes() {
@@ -94,12 +94,13 @@ export default function Ingredientes() {
       key: commonRowKey++,
       ingredient_id: r.ingredient_id,
       quantity_per_budin: String(r.quantity_per_budin),
+      applies_to: r.applies_to,
     })))
     setCommonSheetOpen(true)
   }
 
-  function addCommonRow() {
-    setCommonRows(r => [...r, { key: commonRowKey++, ingredient_id: '', quantity_per_budin: '' }])
+  function addCommonRow(applies_to: 'all' | 'integral') {
+    setCommonRows(r => [...r, { key: commonRowKey++, ingredient_id: '', quantity_per_budin: '', applies_to }])
   }
 
   function removeCommonRow(key: number) {
@@ -113,7 +114,7 @@ export default function Ingredientes() {
   async function saveCommon() {
     const items = commonRows
       .filter(r => r.ingredient_id && r.quantity_per_budin)
-      .map(r => ({ ingredient_id: r.ingredient_id, quantity_per_budin: parseFloat(r.quantity_per_budin) }))
+      .map(r => ({ ingredient_id: r.ingredient_id, quantity_per_budin: parseFloat(r.quantity_per_budin), applies_to: r.applies_to }))
     await saveCommonRecipe.mutateAsync(items)
     setCommonSheetOpen(false)
   }
@@ -197,18 +198,38 @@ export default function Ingredientes() {
             <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
           </Button>
         </div>
+
         {commonRecipe.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sin ingredientes comunes definidos.</p>
         ) : (
-          <div className="space-y-1">
-            {commonRecipe.map(item => (
-              <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{item.ingredient_name}</span>
-                <span className="text-muted-foreground tabular-nums">
-                  {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
-                </span>
+          <div className="space-y-3">
+            {commonRecipe.filter(item => item.applies_to === 'all').length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Para todos</p>
+                {commonRecipe.filter(item => item.applies_to === 'all').map(item => (
+                  <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
+                    <span className="text-foreground">{item.ingredient_name}</span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            {commonRecipe.filter(item => item.applies_to === 'integral').length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Solo integrales</p>
+                {commonRecipe.filter(item => item.applies_to === 'integral').map(item => (
+                  <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
+                    <span className="text-foreground">{item.ingredient_name}</span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -219,54 +240,98 @@ export default function Ingredientes() {
           <SheetHeader className="px-6 pt-6 pb-4">
             <SheetTitle>Ingredientes comunes de budines</SheetTitle>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <p className="text-xs text-muted-foreground">
-              Estos ingredientes se comparten en todos los budines que usen la receta común. Editarlos afecta a todos.
+              Editarlos afecta a todos los budines que usen receta común. Los de "Solo integrales" también heredan los de "Para todos".
             </p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-foreground">Ingredientes</span>
-              <Button variant="outline" size="sm" className="cursor-pointer" onClick={addCommonRow}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> Ingrediente
-              </Button>
-            </div>
-            {commonRows.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Sin ingredientes. Agregá uno.</p>
-            )}
-            {commonRows.map(row => {
-              const ing = ingredients.find(i => i.id === row.ingredient_id)
-              return (
-                <div key={row.key} className="flex items-center gap-2">
-                  <div className="flex-1 min-w-0">
-                    <IngredientCombobox
-                      value={row.ingredient_id}
-                      onChange={id => updateCommonRow(row.key, 'ingredient_id', id)}
-                      allowCreate
+
+            {/* Para todos */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Para todos los budines</span>
+                <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => addCommonRow('all')}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Ingrediente
+                </Button>
+              </div>
+              {commonRows.filter(r => r.applies_to === 'all').length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">Sin ingredientes. Agregá uno.</p>
+              )}
+              {commonRows.filter(r => r.applies_to === 'all').map(row => {
+                const ing = ingredients.find(i => i.id === row.ingredient_id)
+                return (
+                  <div key={row.key} className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <IngredientCombobox
+                        value={row.ingredient_id}
+                        onChange={id => updateCommonRow(row.key, 'ingredient_id', id)}
+                        allowCreate
+                      />
+                    </div>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      className="w-20 shrink-0"
+                      placeholder="0"
+                      value={row.quantity_per_budin}
+                      onChange={e => updateCommonRow(row.key, 'quantity_per_budin', e.target.value.replace(/[^0-9]/g, ''))}
                     />
+                    {ing && (
+                      <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
+                        {ing.unit === 'unidad' ? 'uni' : ing.unit}
+                      </Badge>
+                    )}
+                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => removeCommonRow(row.key)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
                   </div>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    className="w-20 shrink-0"
-                    placeholder="0"
-                    value={row.quantity_per_budin}
-                    onChange={e => updateCommonRow(row.key, 'quantity_per_budin', e.target.value.replace(/[^0-9]/g, ''))}
-                  />
-                  {ing && (
-                    <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
-                      {ing.unit === 'unidad' ? 'uni' : ing.unit}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={() => removeCommonRow(row.key)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+
+            <div className="border-t border-border" />
+
+            {/* Solo integrales */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Solo integrales</span>
+                <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => addCommonRow('integral')}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Ingrediente
+                </Button>
+              </div>
+              {commonRows.filter(r => r.applies_to === 'integral').length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">Sin ingredientes. Agregá uno.</p>
+              )}
+              {commonRows.filter(r => r.applies_to === 'integral').map(row => {
+                const ing = ingredients.find(i => i.id === row.ingredient_id)
+                return (
+                  <div key={row.key} className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <IngredientCombobox
+                        value={row.ingredient_id}
+                        onChange={id => updateCommonRow(row.key, 'ingredient_id', id)}
+                        allowCreate
+                      />
+                    </div>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      className="w-20 shrink-0"
+                      placeholder="0"
+                      value={row.quantity_per_budin}
+                      onChange={e => updateCommonRow(row.key, 'quantity_per_budin', e.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                    {ing && (
+                      <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
+                        {ing.unit === 'unidad' ? 'uni' : ing.unit}
+                      </Badge>
+                    )}
+                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => removeCommonRow(row.key)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
           </div>
           <SheetFooter className="gap-2 px-6 py-4 border-t border-border">
             <Button variant="outline" className="cursor-pointer" onClick={() => setCommonSheetOpen(false)}>Cancelar</Button>
