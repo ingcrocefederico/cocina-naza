@@ -18,18 +18,23 @@ flavorsRouter.get('/', async (_req, res) => {
 
        UNION ALL
 
-       -- Common budines: cross-join with applicable common items, apply overrides
-       -- applies_to filter: 'all' always; 'integral' only for (Int) flavors
-       -- qty=0 overrides are exclusion markers → skip them
+       -- Common budines: LATERAL + DISTINCT ON so 'integral' overrides 'all' for same ingredient
        SELECT f.id AS flavor_id,
-              cri.ingredient_id,
-              COALESCE(ri.quantity_per_budin, cri.quantity_per_budin) AS quantity_per_budin
+              eff.ingredient_id,
+              COALESCE(ri.quantity_per_budin, eff.quantity_per_budin) AS quantity_per_budin
        FROM flavors f
-       CROSS JOIN common_recipe_items cri
-       LEFT JOIN recipe_items ri ON ri.flavor_id = f.id AND ri.ingredient_id = cri.ingredient_id
+       JOIN LATERAL (
+         SELECT DISTINCT ON (cri.ingredient_id)
+                cri.ingredient_id,
+                cri.quantity_per_budin
+         FROM common_recipe_items cri
+         WHERE cri.applies_to = 'all'
+            OR (f.name LIKE '(Int)%' AND cri.applies_to = 'integral')
+         ORDER BY cri.ingredient_id, (cri.applies_to = 'integral') DESC
+       ) eff ON true
+       LEFT JOIN recipe_items ri ON ri.flavor_id = f.id AND ri.ingredient_id = eff.ingredient_id
        WHERE f.active = true AND f.uses_common_ingredients = true
-         AND (cri.applies_to = 'all' OR (f.name LIKE '(Int)%' AND cri.applies_to = 'integral'))
-         AND COALESCE(ri.quantity_per_budin, cri.quantity_per_budin) > 0
+         AND COALESCE(ri.quantity_per_budin, eff.quantity_per_budin) > 0
 
        UNION ALL
 
@@ -135,12 +140,13 @@ flavorsRouter.get('/:id/recipe', async (req, res) => {
 
   const [commonRes, recipeRes] = await Promise.all([
     query<{ ingredient_id: string; ingredient_name: string; unit: string; quantity_per_budin: number; price_per_unit: string }>(
-      `SELECT cri.ingredient_id, i.name AS ingredient_name, i.unit,
+      `SELECT DISTINCT ON (cri.ingredient_id)
+              cri.ingredient_id, i.name AS ingredient_name, i.unit,
               ROUND(cri.quantity_per_budin)::integer AS quantity_per_budin, i.price_per_unit
        FROM common_recipe_items cri
        JOIN ingredients i ON i.id = cri.ingredient_id
        WHERE cri.applies_to = 'all' OR ($1 AND cri.applies_to = 'integral')
-       ORDER BY i.name`,
+       ORDER BY cri.ingredient_id, (cri.applies_to = 'integral') DESC, i.name`,
       [isIntegral]
     ),
     query<{ id: string; ingredient_id: string; ingredient_name: string; unit: string; quantity_per_budin: number; price_per_unit: string }>(

@@ -87,6 +87,23 @@ describe('GET /api/flavors — integral cost CTE', () => {
     expect(res.status).toBe(200)
     expect(res.body[0].cost_per_budin).toBe('300.00')
   })
+
+  it('uses integral quantity when same ingredient is in both all and integral layers', async () => {
+    const flavor = {
+      id: 'f-int',
+      name: '(Int) Vainilla',
+      emoji: '🍦',
+      price_per_budin: '1500.00',
+      active: true,
+      cost_per_budin: '200.00',
+      profit_per_budin: '1300.00',
+      uses_common_ingredients: true,
+    }
+    mockQuery.mockResolvedValue({ rows: [flavor] })
+    const res = await request(makeApp()).get('/api/flavors').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    expect(res.body[0].cost_per_budin).toBe('200.00')
+  })
 })
 
 describe('POST /api/flavors', () => {
@@ -248,6 +265,24 @@ describe('GET /api/flavors/:id/recipe — integral + is_deleted', () => {
     expect(res.body).toHaveLength(2)
     expect(res.body.every((r: { is_common: boolean }) => r.is_common)).toBe(true)
     expect(res.body.every((r: { is_deleted: boolean }) => r.is_deleted === false)).toBe(true)
+  })
+
+  it('uses integral layer quantity when same ingredient exists in both all and integral', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ uses_common_ingredients: true, is_integral: true }] })
+    // DISTINCT ON already resolved — only one row per ingredient, integral wins
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { ingredient_id: 'ing-azucar', ingredient_name: 'Azúcar', unit: 'g', quantity_per_budin: 100, price_per_unit: '0.001' },
+      ],
+    })
+    mockQuery.mockResolvedValueOnce({ rows: [] })
+    const res = await request(makeApp()).get('/api/flavors/f-int/recipe').set('Cookie', authCookie())
+    expect(res.status).toBe(200)
+    const azucar = res.body.find((r: { ingredient_id: string }) => r.ingredient_id === 'ing-azucar')
+    expect(azucar.quantity_per_budin).toBe(100)
+    expect(azucar.is_common).toBe(true)
+    expect(azucar.is_overridden).toBe(false)
+    expect(azucar.is_deleted).toBe(false)
   })
 
   it('returns is_deleted=true for qty=0 override and includes it in response', async () => {
