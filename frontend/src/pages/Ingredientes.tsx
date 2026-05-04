@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { IngredientCombobox } from '@/components/IngredientCombobox'
 import { Badge } from '@/components/ui/badge'
-import { Calculator, Lock, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Calculator, ChevronDown, ChevronUp, Lock, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import type { Ingredient, Unit, CommonRecipeItem } from '../types'
 
 // Price units the user can select when entering a purchase price
@@ -88,6 +88,7 @@ export default function Ingredientes() {
   const saveCommonRecipe = useSaveCommonRecipe()
   const [commonSheetOpen, setCommonSheetOpen] = useState(false)
   const [commonRows, setCommonRows] = useState<CommonEditRow[]>([])
+  const [commonOpen, setCommonOpen] = useState(false)
 
   function openCommonEditor() {
     setCommonRows(commonRecipe.map((r: CommonRecipeItem) => ({
@@ -188,47 +189,58 @@ export default function Ingredientes() {
       </div>
 
       {/* Ingredientes comunes de budines */}
-      <div className="rounded-lg border border-border p-4 space-y-3">
+      <div className="rounded-lg border border-border p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setCommonOpen(o => !o)}
+          >
             <Lock className="w-4 h-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Ingredientes comunes de budines</h2>
-          </div>
+            {commonOpen
+              ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            }
+          </button>
           <Button variant="outline" size="sm" className="cursor-pointer" onClick={openCommonEditor}>
             <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
           </Button>
         </div>
 
-        {commonRecipe.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin ingredientes comunes definidos.</p>
-        ) : (
-          <div className="space-y-3">
-            {commonRecipe.filter(item => item.applies_to === 'all').length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Para todos</p>
-                {commonRecipe.filter(item => item.applies_to === 'all').map(item => (
-                  <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
-                    <span className="text-foreground">{item.ingredient_name}</span>
-                    <span className="text-muted-foreground tabular-nums">
-                      {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
-                    </span>
+        {commonOpen && (
+          <div className="mt-3 space-y-3">
+            {commonRecipe.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin ingredientes comunes definidos.</p>
+            ) : (
+              <>
+                {commonRecipe.filter(item => item.applies_to === 'all').length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Para todos</p>
+                    {commonRecipe.filter(item => item.applies_to === 'all').map(item => (
+                      <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
+                        <span className="text-foreground">{item.ingredient_name}</span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            {commonRecipe.filter(item => item.applies_to === 'integral').length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Solo integrales</p>
-                {commonRecipe.filter(item => item.applies_to === 'integral').map(item => (
-                  <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
-                    <span className="text-foreground">{item.ingredient_name}</span>
-                    <span className="text-muted-foreground tabular-nums">
-                      {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
-                    </span>
+                {commonRecipe.filter(item => item.applies_to === 'integral').length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Solo integrales</p>
+                    {commonRecipe.filter(item => item.applies_to === 'integral').map(item => (
+                      <div key={item.ingredient_id} className="flex items-center justify-between text-sm">
+                        <span className="text-foreground">{item.ingredient_name}</span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {item.quantity_per_budin} {item.unit === 'unidad' ? 'uni' : item.unit}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         )}
