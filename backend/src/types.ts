@@ -17,6 +17,7 @@ export interface Flavor {
   cost_per_budin: string
   profit_per_budin: string
   preparation: string | null
+  uses_common_ingredients: boolean
 }
 
 export interface Ingredient {
@@ -25,6 +26,15 @@ export interface Ingredient {
   unit: 'kg' | 'g' | 'L' | 'ml' | 'unidad'
   price_per_unit: string
   updated_at: string
+}
+
+export interface CommonRecipeItem {
+  id: string
+  ingredient_id: string
+  ingredient_name: string
+  unit: string
+  quantity_per_budin: number
+  price_per_unit: string
 }
 
 export interface Order {
