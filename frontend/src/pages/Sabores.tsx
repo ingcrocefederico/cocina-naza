@@ -42,6 +42,7 @@ interface CommonItemState {
   quantity_per_budin: number
   override_quantity: string
   is_overridden: boolean
+  is_deleted: boolean
 }
 
 const emptyForm: FlavorForm = { name: '', emoji: '', price_per_budin: '' }
@@ -57,7 +58,6 @@ export default function Sabores() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Flavor | null>(null)
   const [form, setForm] = useState<FlavorForm>(emptyForm)
-  const [activeRowKey, setActiveRowKey] = useState<number | null>(null)
   const [rows, setRows] = useState<RecipeRow[]>([])
   const [commonItems, setCommonItems] = useState<CommonItemState[]>([])
 
@@ -81,6 +81,7 @@ export default function Sabores() {
             quantity_per_budin: r.quantity_per_budin,
             override_quantity: r.is_overridden ? String(Math.round(Number(r.quantity_per_budin))) : '',
             is_overridden: r.is_overridden,
+            is_deleted: r.is_deleted,
           }))
       )
       setRows(
@@ -151,16 +152,30 @@ export default function Sabores() {
     )
   }
 
+  function deleteCommon(ingredient_id: string) {
+    setCommonItems(items =>
+      items.map(item =>
+        item.ingredient_id === ingredient_id
+          ? { ...item, is_deleted: true, is_overridden: false, override_quantity: '' }
+          : item
+      )
+    )
+  }
+
   async function handleSave() {
     const overrideItems = commonItems
       .filter(c => c.is_overridden && c.override_quantity)
       .map(c => ({ ingredient_id: c.ingredient_id, quantity_per_budin: parseFloat(c.override_quantity) }))
 
+    const deletedItems = commonItems
+      .filter(c => c.is_deleted)
+      .map(c => ({ ingredient_id: c.ingredient_id, quantity_per_budin: 0 }))
+
     const exclusiveItems = rows
       .filter(r => r.ingredient_id && r.quantity_per_budin)
       .map(r => ({ ingredient_id: r.ingredient_id, quantity_per_budin: parseFloat(r.quantity_per_budin) }))
 
-    const recipeItems = [...overrideItems, ...exclusiveItems]
+    const recipeItems = [...overrideItems, ...deletedItems, ...exclusiveItems]
 
     if (editing) {
       await updateFlavor.mutateAsync({ id: editing.id, ...form })
@@ -414,9 +429,9 @@ export default function Sabores() {
                 </div>
               )}
 
-              {editing?.uses_common_ingredients && commonItems.length > 0 && (
+              {editing?.uses_common_ingredients && commonItems.some(c => !c.is_deleted) && (
                 <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/20">
-                  {commonItems.map(item => (
+                  {commonItems.filter(c => !c.is_deleted).map(item => (
                     <div key={item.ingredient_id} className="flex items-center gap-2">
                       <span className="flex-1 min-w-0 text-sm text-foreground truncate">{item.ingredient_name}</span>
                       {item.is_overridden ? (
@@ -446,6 +461,14 @@ export default function Sabores() {
                           : <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                         }
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer shrink-0"
+                        onClick={() => deleteCommon(item.ingredient_id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -474,8 +497,6 @@ export default function Sabores() {
                   row={row}
                   onUpdate={updateRow}
                   onRemove={removeRow}
-                  isActive={activeRowKey === row.key}
-                  onActivate={() => setActiveRowKey(k => k === row.key ? null : row.key)}
                 />
               ))}
             </div>
@@ -597,8 +618,6 @@ export default function Sabores() {
 
 interface IngredientRowProps {
   row: RecipeRow
-  isActive: boolean
-  onActivate: () => void
   onUpdate: (key: number, field: 'ingredient_id' | 'quantity_per_budin', value: string) => void
   onRemove: (key: number) => void
 }
@@ -607,15 +626,12 @@ function formatUnit(unit: string): string {
   return unit === 'unidad' ? 'uni' : unit
 }
 
-function IngredientRow({ row, isActive, onActivate, onUpdate, onRemove }: IngredientRowProps) {
+function IngredientRow({ row, onUpdate, onRemove }: IngredientRowProps) {
   const { data: ingredients = [] } = useIngredients()
   const ing = ingredients.find(i => i.id === row.ingredient_id)
 
   return (
-    <div
-      className="relative flex items-center gap-2"
-      onClick={onActivate}
-    >
+    <div className="flex items-center gap-2">
       <div className="flex-1 min-w-0">
         <IngredientCombobox
           value={row.ingredient_id}
@@ -636,16 +652,14 @@ function IngredientRow({ row, isActive, onActivate, onUpdate, onRemove }: Ingred
           {formatUnit(ing.unit)}
         </Badge>
       )}
-      {isActive && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer bg-background"
-          onClick={e => { e.stopPropagation(); onRemove(row.key) }}
-        >
-          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="cursor-pointer shrink-0"
+        onClick={() => onRemove(row.key)}
+      >
+        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+      </Button>
     </div>
   )
 }
