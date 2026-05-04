@@ -14,8 +14,8 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { IngredientCombobox } from '@/components/IngredientCombobox'
-import { Trash2, Plus, ChefHat } from 'lucide-react'
-import type { Flavor, RecipeItem } from '../types'
+import { Trash2, Plus, ChefHat, Lock, LockOpen } from 'lucide-react'
+import type { Flavor, RecipeItem, Unit } from '../types'
 
 function formatARS(value: string) {
   const n = parseFloat(value)
@@ -35,6 +35,15 @@ interface RecipeRow {
   quantity_per_budin: string
 }
 
+interface CommonItemState {
+  ingredient_id: string
+  ingredient_name: string
+  unit: Unit
+  quantity_per_budin: number
+  override_quantity: string
+  is_overridden: boolean
+}
+
 const emptyForm: FlavorForm = { name: '', emoji: '', price_per_budin: '' }
 let rowKey = 0
 
@@ -50,6 +59,7 @@ export default function Sabores() {
   const [form, setForm] = useState<FlavorForm>(emptyForm)
   const [activeRowKey, setActiveRowKey] = useState<number | null>(null)
   const [rows, setRows] = useState<RecipeRow[]>([])
+  const [commonItems, setCommonItems] = useState<CommonItemState[]>([])
 
   const [deleteTarget, setDeleteTarget] = useState<Flavor | null>(null)
 
@@ -61,11 +71,27 @@ export default function Sabores() {
 
   useEffect(() => {
     if (existingRecipe) {
-      setRows(existingRecipe.map((r: RecipeItem) => ({
-        key: rowKey++,
-        ingredient_id: r.ingredient_id,
-        quantity_per_budin: String(Math.round(Number(r.quantity_per_budin))),
-      })))
+      setCommonItems(
+        existingRecipe
+          .filter((r: RecipeItem) => r.is_common)
+          .map((r: RecipeItem) => ({
+            ingredient_id: r.ingredient_id,
+            ingredient_name: r.ingredient_name,
+            unit: r.unit,
+            quantity_per_budin: r.quantity_per_budin,
+            override_quantity: r.is_overridden ? String(Math.round(Number(r.quantity_per_budin))) : '',
+            is_overridden: r.is_overridden,
+          }))
+      )
+      setRows(
+        existingRecipe
+          .filter((r: RecipeItem) => !r.is_common)
+          .map((r: RecipeItem) => ({
+            key: rowKey++,
+            ingredient_id: r.ingredient_id,
+            quantity_per_budin: String(Math.round(Number(r.quantity_per_budin))),
+          }))
+      )
     }
   }, [existingRecipe])
 
@@ -95,12 +121,46 @@ export default function Sabores() {
     setRows(r => r.map(row => row.key === key ? { ...row, [field]: value } : row))
   }
 
+  function unlockCommon(ingredient_id: string) {
+    setCommonItems(items =>
+      items.map(item =>
+        item.ingredient_id === ingredient_id
+          ? { ...item, is_overridden: true, override_quantity: String(item.quantity_per_budin) }
+          : item
+      )
+    )
+  }
+
+  function lockCommon(ingredient_id: string) {
+    setCommonItems(items =>
+      items.map(item =>
+        item.ingredient_id === ingredient_id
+          ? { ...item, is_overridden: false, override_quantity: '' }
+          : item
+      )
+    )
+  }
+
+  function updateCommonOverride(ingredient_id: string, value: string) {
+    setCommonItems(items =>
+      items.map(item =>
+        item.ingredient_id === ingredient_id
+          ? { ...item, override_quantity: value.replace(/[^0-9]/g, '') }
+          : item
+      )
+    )
+  }
+
   async function handleSave() {
-    const validRows = rows.filter(r => r.ingredient_id && r.quantity_per_budin)
-    const recipeItems = validRows.map(r => ({
-      ingredient_id: r.ingredient_id,
-      quantity_per_budin: parseFloat(r.quantity_per_budin),
-    }))
+    const overrideItems = commonItems
+      .filter(c => c.is_overridden && c.override_quantity)
+      .map(c => ({ ingredient_id: c.ingredient_id, quantity_per_budin: parseFloat(c.override_quantity) }))
+
+    const exclusiveItems = rows
+      .filter(r => r.ingredient_id && r.quantity_per_budin)
+      .map(r => ({ ingredient_id: r.ingredient_id, quantity_per_budin: parseFloat(r.quantity_per_budin) }))
+
+    const recipeItems = [...overrideItems, ...exclusiveItems]
 
     if (editing) {
       await updateFlavor.mutateAsync({ id: editing.id, ...form })
@@ -113,6 +173,12 @@ export default function Sabores() {
       }
     }
     setOpen(false)
+  }
+
+  async function handleToggleCommon(value: boolean) {
+    if (!editing) return
+    await updateFlavor.mutateAsync({ id: editing.id, uses_common_ingredients: value })
+    if (!value) setCommonItems([])
   }
 
   const isSaving = createFlavor.isPending || updateFlavor.isPending || saveRecipe.isPending
@@ -332,8 +398,64 @@ export default function Sabores() {
             <Separator />
 
             <div className="space-y-3">
+              {editing && (
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-foreground">Ingredientes comunes</Label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={editing.uses_common_ingredients}
+                      onChange={e => handleToggleCommon(e.target.checked)}
+                      className="cursor-pointer"
+                    />
+                    Usar comunes
+                  </label>
+                </div>
+              )}
+
+              {editing?.uses_common_ingredients && commonItems.length > 0 && (
+                <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/20">
+                  {commonItems.map(item => (
+                    <div key={item.ingredient_id} className="flex items-center gap-2">
+                      <span className="flex-1 min-w-0 text-sm text-foreground truncate">{item.ingredient_name}</span>
+                      {item.is_overridden ? (
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          className="w-20 shrink-0"
+                          value={item.override_quantity}
+                          onChange={e => updateCommonOverride(item.ingredient_id, e.target.value)}
+                        />
+                      ) : (
+                        <span className="w-20 shrink-0 text-sm text-muted-foreground text-right tabular-nums">
+                          {item.quantity_per_budin}
+                        </span>
+                      )}
+                      <Badge variant="secondary" className="w-10 justify-center shrink-0 text-xs">
+                        {item.unit === 'unidad' ? 'uni' : item.unit}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer shrink-0"
+                        onClick={() => item.is_overridden ? lockCommon(item.ingredient_id) : unlockCommon(item.ingredient_id)}
+                      >
+                        {item.is_overridden
+                          ? <LockOpen className="w-3.5 h-3.5 text-amber-500" />
+                          : <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                        }
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Separator />
+
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold text-foreground">Receta</Label>
+                <Label className="text-sm font-semibold text-foreground">
+                  {editing?.uses_common_ingredients ? 'Ingredientes propios' : 'Receta'}
+                </Label>
                 <Button variant="outline" size="sm" className="cursor-pointer" onClick={addRow}>
                   <Plus className="w-3.5 h-3.5 mr-1" /> Ingrediente
                 </Button>
