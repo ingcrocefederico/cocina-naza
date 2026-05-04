@@ -27,8 +27,9 @@ export function useUpdateFlavor() {
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Flavor> & { id: string }) =>
       api.put(`/api/flavors/${id}`, data),
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ['flavors'] })
+      qc.invalidateQueries({ queryKey: ['flavor-recipe', id] })
       toast.success('Sabor actualizado')
     },
     onError: () => toast.error('Error al actualizar el sabor'),
