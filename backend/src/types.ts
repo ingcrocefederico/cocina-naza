@@ -35,6 +35,7 @@ export interface CommonRecipeItem {
   unit: string
   quantity_per_budin: number
   price_per_unit: string
+  applies_to: 'all' | 'integral'
 }
 
 export interface Order {

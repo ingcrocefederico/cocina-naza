@@ -31,6 +31,19 @@ describe('GET /api/common-recipe', () => {
     expect(res.body).toHaveLength(1)
     expect(res.body[0].ingredient_name).toBe('Harina')
   })
+
+  it('includes applies_to in each item', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 'cri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g',
+          quantity_per_budin: 500, price_per_unit: '0.005', applies_to: 'all' },
+      ],
+    })
+    const app = createApp()
+    const res = await request(app).get('/api/common-recipe')
+    expect(res.status).toBe(200)
+    expect(res.body[0].applies_to).toBe('all')
+  })
 })
 
 describe('PUT /api/common-recipe', () => {
@@ -44,13 +57,13 @@ describe('PUT /api/common-recipe', () => {
     // SELECT call (return updated list)
     mockQuery.mockResolvedValueOnce({
       rows: [
-        { id: 'cri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 600, price_per_unit: '0.005' },
+        { id: 'cri-1', ingredient_id: 'ing-1', ingredient_name: 'Harina', unit: 'g', quantity_per_budin: 600, price_per_unit: '0.005', applies_to: 'all' },
       ],
     })
     const app = createApp()
     const res = await request(app)
       .put('/api/common-recipe')
-      .send([{ ingredient_id: 'ing-1', quantity_per_budin: 600 }])
+      .send([{ ingredient_id: 'ing-1', quantity_per_budin: 600, applies_to: 'all' }])
     expect(res.status).toBe(200)
     expect(res.body[0].quantity_per_budin).toBe(600)
   })
@@ -62,5 +75,13 @@ describe('PUT /api/common-recipe', () => {
     const res = await request(app).put('/api/common-recipe').send([])
     expect(res.status).toBe(200)
     expect(res.body).toHaveLength(0)
+  })
+
+  it('rejects invalid applies_to value', async () => {
+    const app = createApp()
+    const res = await request(app)
+      .put('/api/common-recipe')
+      .send([{ ingredient_id: 'ing-1', quantity_per_budin: 100, applies_to: 'invalid' }])
+    expect(res.status).toBe(400)
   })
 })
