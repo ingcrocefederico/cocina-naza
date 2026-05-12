@@ -15,13 +15,53 @@ ingredientsRouter.get('/calculator', async (req, res) => {
     return
   }
 
+  const EFFECTIVE_RECIPE_CTE = `
+    WITH effective_recipe AS (
+      SELECT ri.flavor_id, ri.ingredient_id, ri.quantity_per_budin
+      FROM recipe_items ri
+      JOIN flavors f ON f.id = ri.flavor_id
+      WHERE f.uses_common_ingredients = false
+
+      UNION ALL
+
+      SELECT f.id AS flavor_id,
+             eff.ingredient_id,
+             COALESCE(ri.quantity_per_budin, eff.quantity_per_budin) AS quantity_per_budin
+      FROM flavors f
+      JOIN LATERAL (
+        SELECT DISTINCT ON (cri.ingredient_id)
+               cri.ingredient_id,
+               cri.quantity_per_budin
+        FROM common_recipe_items cri
+        WHERE cri.applies_to = 'all'
+           OR (f.name LIKE '(Int)%' AND cri.applies_to = 'integral')
+        ORDER BY cri.ingredient_id, (cri.applies_to = 'integral') DESC
+      ) eff ON true
+      LEFT JOIN recipe_items ri ON ri.flavor_id = f.id AND ri.ingredient_id = eff.ingredient_id
+      WHERE f.uses_common_ingredients = true
+        AND COALESCE(ri.quantity_per_budin, eff.quantity_per_budin) > 0
+
+      UNION ALL
+
+      SELECT ri.flavor_id, ri.ingredient_id, ri.quantity_per_budin
+      FROM recipe_items ri
+      JOIN flavors f ON f.id = ri.flavor_id
+      WHERE f.uses_common_ingredients = true
+        AND ri.ingredient_id NOT IN (
+          SELECT ingredient_id FROM common_recipe_items
+          WHERE applies_to = 'all' OR (f.name LIKE '(Int)%' AND applies_to = 'integral')
+        )
+        AND ri.quantity_per_budin > 0
+    )`
+
   const totalsRes = await query<{ id: string; name: string; unit: string; price_per_unit: string; total_quantity: string }>(
-    `SELECT i.id, i.name, i.unit, i.price_per_unit,
-            SUM(oi.quantity * ri.quantity_per_budin) AS total_quantity
+    `${EFFECTIVE_RECIPE_CTE}
+     SELECT i.id, i.name, i.unit, i.price_per_unit,
+            SUM(oi.quantity * er.quantity_per_budin) AS total_quantity
      FROM orders o
      JOIN order_items oi ON oi.order_id = o.id
-     JOIN recipe_items ri ON ri.flavor_id = oi.flavor_id
-     JOIN ingredients i ON i.id = ri.ingredient_id
+     JOIN effective_recipe er ON er.flavor_id = oi.flavor_id
+     JOIN ingredients i ON i.id = er.ingredient_id
      WHERE o.date = $1
      GROUP BY i.id, i.name, i.unit, i.price_per_unit
      ORDER BY i.name`,
@@ -29,15 +69,16 @@ ingredientsRouter.get('/calculator', async (req, res) => {
   )
 
   const byFlavorRes = await query<{ flavor_id: string; flavor_name: string; budin_count: string; ingredient_id: string; ingredient_name: string; unit: string; total_quantity: string }>(
-    `SELECT f.id AS flavor_id, f.name AS flavor_name,
+    `${EFFECTIVE_RECIPE_CTE}
+     SELECT f.id AS flavor_id, f.name AS flavor_name,
             SUM(oi.quantity) AS budin_count,
             i.id AS ingredient_id, i.name AS ingredient_name, i.unit,
-            SUM(oi.quantity * ri.quantity_per_budin) AS total_quantity
+            SUM(oi.quantity * er.quantity_per_budin) AS total_quantity
      FROM orders o
      JOIN order_items oi ON oi.order_id = o.id
      JOIN flavors f ON f.id = oi.flavor_id
-     JOIN recipe_items ri ON ri.flavor_id = oi.flavor_id
-     JOIN ingredients i ON i.id = ri.ingredient_id
+     JOIN effective_recipe er ON er.flavor_id = oi.flavor_id
+     JOIN ingredients i ON i.id = er.ingredient_id
      WHERE o.date = $1
      GROUP BY f.id, f.name, i.id, i.name, i.unit
      ORDER BY f.name, i.name`,
