@@ -46,6 +46,8 @@ export interface Order {
   date: string
   status: 'pedido' | 'preparado' | 'entregado' | 'cobrado' | 'cobrado_efectivo' | 'cobrado_transf'
   sale_price: string | null
+  base_sale_price: string | null
+  price_adjustment_pct: string | null
   notes: string | null
   created_at: string
   updated_at: string

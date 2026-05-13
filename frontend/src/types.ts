@@ -43,6 +43,8 @@ export interface Order {
   date: string
   status: OrderStatus
   sale_price: string | null
+  base_sale_price: string | null
+  price_adjustment_pct: string | null
   notes: string | null
   items: OrderItem[]
 }

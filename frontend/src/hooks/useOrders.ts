@@ -11,6 +11,8 @@ export interface CreateOrderInput {
   date?: string
   status?: OrderStatus
   sale_price?: string
+  base_sale_price?: string | null
+  price_adjustment_pct?: string | null
   notes?: string
   items: OrderItemInput[]
 }
@@ -22,6 +24,8 @@ export interface UpdateOrderInput {
   date?: string
   status?: OrderStatus
   sale_price?: string
+  base_sale_price?: string | null
+  price_adjustment_pct?: string | null
   notes?: string
   items?: OrderItemInput[]
 }

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { IngredientCombobox } from '@/components/IngredientCombobox'
 import { Badge } from '@/components/ui/badge'
 import { Calculator, ChevronDown, ChevronUp, Lock, Pencil, Plus, Search, Trash2 } from 'lucide-react'
@@ -77,6 +77,7 @@ export default function Ingredientes() {
   const [editing, setEditing] = useState<Ingredient | null>(null)
   const [form, setForm] = useState<IngredientForm>(emptyForm)
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null)
+  const [removeCommonTarget, setRemoveCommonTarget] = useState<CommonEditRow | null>(null)
 
   const [search, setSearch] = useState('')
   const [calcOpen, setCalcOpen] = useState(false)
@@ -292,7 +293,12 @@ export default function Ingredientes() {
                         {ing.unit === 'unidad' ? 'uni' : ing.unit}
                       </Badge>
                     )}
-                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => removeCommonRow(row.key)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={() => row.ingredient_id ? setRemoveCommonTarget(row) : removeCommonRow(row.key)}
+                    >
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
@@ -337,7 +343,12 @@ export default function Ingredientes() {
                         {ing.unit === 'unidad' ? 'uni' : ing.unit}
                       </Badge>
                     )}
-                    <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => removeCommonRow(row.key)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={() => row.ingredient_id ? setRemoveCommonTarget(row) : removeCommonRow(row.key)}
+                    >
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
@@ -561,26 +572,35 @@ export default function Ingredientes() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar ingrediente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminará <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDelete}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete ingredient confirmation */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="¿Eliminar ingrediente?"
+        description={
+          <>
+            Se eliminará <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.
+          </>
+        }
+        onConfirm={handleDelete}
+      />
+
+      {/* Remove from common confirmation */}
+      <ConfirmDialog
+        open={!!removeCommonTarget}
+        onOpenChange={(open) => !open && setRemoveCommonTarget(null)}
+        title="¿Quitar de comunes?"
+        confirmText="Quitar"
+        description={
+          <>
+            <strong>{ingredients.find(i => i.id === removeCommonTarget?.ingredient_id)?.name ?? 'Este ingrediente'}</strong> dejará de aplicarse automáticamente a los budines. Tomará efecto al guardar.
+          </>
+        }
+        onConfirm={() => {
+          if (removeCommonTarget) removeCommonRow(removeCommonTarget.key)
+          setRemoveCommonTarget(null)
+        }}
+      />
     </div>
   )
 }
