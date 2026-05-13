@@ -7,9 +7,9 @@ import { useClientOrders } from '../hooks/useOrders'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import ClientSheet from '../components/ClientSheet'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import type { ClientWithStats, OrderStatus } from '../types'
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -241,25 +241,17 @@ export default function Clientes() {
 
       <ClientOrdersSheet client={ordersClient} onClose={() => setOrdersClient(null)} />
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(isOpen: boolean) => !isOpen && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminará a <strong>{deleteTarget?.name}</strong>. Los pedidos existentes no se eliminarán pero quedarán sin cliente vinculado. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { deleteClient.mutate(deleteTarget!.id); setDeleteTarget(null) }}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}
+        title="¿Eliminar cliente?"
+        description={
+          <>
+            Se eliminará a <strong>{deleteTarget?.name}</strong>. Los pedidos existentes no se eliminarán pero quedarán sin cliente vinculado. Esta acción no se puede deshacer.
+          </>
+        }
+        onConfirm={() => { deleteClient.mutate(deleteTarget!.id); setDeleteTarget(null) }}
+      />
     </div>
   )
 }

@@ -9,7 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectSheet } from '@/components/ui/select-sheet'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Plus, Trash2, Pencil, MapPin, FlaskConical, ChevronDown, Search, Users, Download, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { generatePedidosPDF } from '../lib/generatePedidosPDF'
@@ -467,25 +467,17 @@ export default function Pedidos() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminará el pedido de <strong>{deleteTarget?.client_name}</strong>. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { deleteOrder.mutate(deleteTarget!.id); setDeleteTarget(null) }}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="¿Eliminar pedido?"
+        description={
+          <>
+            Se eliminará el pedido de <strong>{deleteTarget?.client_name}</strong>. Esta acción no se puede deshacer.
+          </>
+        }
+        onConfirm={() => { deleteOrder.mutate(deleteTarget!.id); setDeleteTarget(null) }}
+      />
 
 
     </div>

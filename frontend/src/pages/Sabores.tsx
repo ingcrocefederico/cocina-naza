@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -62,6 +62,10 @@ export default function Sabores() {
   const [commonItems, setCommonItems] = useState<CommonItemState[]>([])
 
   const [deleteTarget, setDeleteTarget] = useState<Flavor | null>(null)
+  const [removeRowTarget, setRemoveRowTarget] = useState<RecipeRow | null>(null)
+  const [removeCommonTarget, setRemoveCommonTarget] = useState<CommonItemState | null>(null)
+
+  const { data: allIngredients = [] } = useIngredients()
 
   const [recipeFlavorId, setRecipeFlavorId] = useState<string | null>(null)
   const [recipeOpen, setRecipeOpen] = useState(false)
@@ -116,6 +120,15 @@ export default function Sabores() {
 
   function removeRow(key: number) {
     setRows(r => r.filter(row => row.key !== key))
+  }
+
+  function requestRemoveRow(key: number) {
+    const row = rows.find(r => r.key === key)
+    if (!row || !row.ingredient_id) {
+      removeRow(key)
+    } else {
+      setRemoveRowTarget(row)
+    }
   }
 
   function updateRow(key: number, field: 'ingredient_id' | 'quantity_per_budin', value: string) {
@@ -465,7 +478,7 @@ export default function Sabores() {
                         variant="ghost"
                         size="sm"
                         className="cursor-pointer shrink-0"
-                        onClick={() => deleteCommon(item.ingredient_id)}
+                        onClick={() => setRemoveCommonTarget(item)}
                       >
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
@@ -496,7 +509,7 @@ export default function Sabores() {
                   key={row.key}
                   row={row}
                   onUpdate={updateRow}
-                  onRemove={removeRow}
+                  onRemove={requestRemoveRow}
                 />
               ))}
             </div>
@@ -593,25 +606,49 @@ export default function Sabores() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar sabor?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminará <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { deleteFlavor.mutate(deleteTarget!.id); setDeleteTarget(null) }}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="¿Eliminar sabor?"
+        description={
+          <>
+            Se eliminará <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.
+          </>
+        }
+        onConfirm={() => { deleteFlavor.mutate(deleteTarget!.id); setDeleteTarget(null) }}
+      />
+
+      <ConfirmDialog
+        open={!!removeRowTarget}
+        onOpenChange={(open) => !open && setRemoveRowTarget(null)}
+        title="¿Quitar ingrediente de la receta?"
+        confirmText="Quitar"
+        description={
+          <>
+            <strong>{allIngredients.find(i => i.id === removeRowTarget?.ingredient_id)?.name ?? 'Este ingrediente'}</strong> dejará de formar parte de la receta. Tomará efecto al guardar.
+          </>
+        }
+        onConfirm={() => {
+          if (removeRowTarget) removeRow(removeRowTarget.key)
+          setRemoveRowTarget(null)
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!removeCommonTarget}
+        onOpenChange={(open) => !open && setRemoveCommonTarget(null)}
+        title="¿Quitar ingrediente común?"
+        confirmText="Quitar"
+        description={
+          <>
+            <strong>{removeCommonTarget?.ingredient_name}</strong> dejará de aplicarse a este sabor. Tomará efecto al guardar.
+          </>
+        }
+        onConfirm={() => {
+          if (removeCommonTarget) deleteCommon(removeCommonTarget.ingredient_id)
+          setRemoveCommonTarget(null)
+        }}
+      />
     </div>
   )
 }
