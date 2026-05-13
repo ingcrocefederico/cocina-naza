@@ -83,6 +83,8 @@ export default function PedidoForm() {
   const watchedItems = useWatch({ control, name: 'items' })
 
   const [flavorTypes, setFlavorTypes] = useState<('común' | 'integral')[]>([])
+  const [priceEdited, setPriceEdited] = useState(false)
+  const [pctAdjustment, setPctAdjustment] = useState('')
 
   function appendFlavor(type: 'común' | 'integral') {
     append({ flavor_id: '', quantity: 1 })
@@ -106,7 +108,10 @@ export default function PedidoForm() {
       setValue('address', existingOrder.address || '')
       setValue('date', existingOrder.date)
       setValue('status', existingOrder.status)
-      setValue('sale_price', existingOrder.sale_price || '')
+      const hasAdjustment = existingOrder.price_adjustment_pct !== null && existingOrder.price_adjustment_pct !== undefined
+      setValue('sale_price', (hasAdjustment ? existingOrder.base_sale_price : existingOrder.sale_price) || '')
+      setPctAdjustment(hasAdjustment ? String(parseFloat(existingOrder.price_adjustment_pct as string)) : '')
+      setPriceEdited(true)
       setValue('notes', existingOrder.notes || '')
       setValue('items', existingOrder.items.map(i => ({ flavor_id: i.flavor_id, quantity: i.quantity })))
       setFlavorTypes(existingOrder.items.map(i => {
@@ -124,20 +129,39 @@ export default function PedidoForm() {
     }, 0)
   }, [watchedItems, flavors])
 
-  const [priceEdited, setPriceEdited] = useState(false)
-
   useEffect(() => {
-    if (!priceEdited) {
+    if (!priceEdited && !isEdit) {
       setValue('sale_price', calculatedPrice > 0 ? calculatedPrice.toFixed(2) : '')
     }
-  }, [calculatedPrice, priceEdited, setValue])
+  }, [calculatedPrice, priceEdited, setValue, isEdit])
+
+  const watchedSalePrice = watch('sale_price')
+  const basePrice = parseFloat(watchedSalePrice || '0')
+  const pctValue = parseFloat(pctAdjustment)
+  const hasValidPct = pctAdjustment.trim() !== '' && !isNaN(pctValue)
+  const finalPrice = hasValidPct && basePrice > 0 ? basePrice * (1 + pctValue / 100) : basePrice
 
   async function onSubmit(data: FormValues) {
     const { client_id, address, date, status, sale_price, notes, items } = data
+    const adjustmentApplied = hasValidPct && basePrice > 0
+    const finalSalePrice = adjustmentApplied ? Math.round(finalPrice).toString() : sale_price
+    const baseSalePrice = adjustmentApplied ? basePrice.toString() : null
+    const adjustmentPct = adjustmentApplied ? pctValue.toString() : null
+    const payload = {
+      client_id,
+      address,
+      date,
+      status,
+      sale_price: finalSalePrice,
+      base_sale_price: baseSalePrice,
+      price_adjustment_pct: adjustmentPct,
+      notes,
+      items,
+    }
     if (isEdit && id) {
-      await updateOrder.mutateAsync({ id, client_id, address, date, status, sale_price, notes, items })
+      await updateOrder.mutateAsync({ id, ...payload })
     } else {
-      await createOrder.mutateAsync({ client_id, address, date, status, sale_price, notes, items })
+      await createOrder.mutateAsync(payload)
     }
     navigate(`/pedidos?date=${data.date}`)
   }
@@ -302,6 +326,27 @@ export default function PedidoForm() {
           />
           {calculatedPrice > 0 && !priceEdited && (
             <p className="text-xs text-muted-foreground mt-1">Calculado: ${calculatedPrice.toLocaleString('es-AR')}</p>
+          )}
+        </div>
+
+        <div>
+          <Label>% Ajuste</Label>
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={pctAdjustment}
+            onChange={e => {
+              const raw = e.target.value
+              if (raw === '' || /^[+-]?\d*\.?\d*$/.test(raw)) {
+                setPctAdjustment(raw)
+              }
+            }}
+            placeholder="Opcional (ej: +10 o -10)"
+          />
+          {hasValidPct && basePrice > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Final: <span className="font-semibold text-primary">${Math.round(finalPrice).toLocaleString('es-AR')}</span>
+            </p>
           )}
         </div>
 

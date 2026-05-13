@@ -95,9 +95,10 @@ ordersRouter.get('/counts', async (req, res) => {
 })
 
 ordersRouter.post('/', async (req, res) => {
-  const { client_id, client_name: bodyClientName, address, date, status = 'pedido', sale_price, notes, items = [] } = req.body as {
+  const { client_id, client_name: bodyClientName, address, date, status = 'pedido', sale_price, base_sale_price, price_adjustment_pct, notes, items = [] } = req.body as {
     client_id?: string; client_name?: string; address?: string; date?: string; status?: string;
-    sale_price?: number; notes?: string; items?: { flavor_id: string; quantity: number }[]
+    sale_price?: number; base_sale_price?: number | null; price_adjustment_pct?: number | null;
+    notes?: string; items?: { flavor_id: string; quantity: number }[]
   }
   if (!date) {
     res.status(400).json({ error: 'date is required' })
@@ -119,9 +120,9 @@ ordersRouter.post('/', async (req, res) => {
   }
 
   const orderRes = await query<{ id: string }>(
-    `INSERT INTO orders (client_name, client_id, address, date, status, sale_price, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-    [client_name, client_id ?? null, address ?? null, date, status, sale_price ?? null, notes ?? null]
+    `INSERT INTO orders (client_name, client_id, address, date, status, sale_price, base_sale_price, price_adjustment_pct, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+    [client_name, client_id ?? null, address ?? null, date, status, sale_price ?? null, base_sale_price ?? null, price_adjustment_pct ?? null, notes ?? null]
   )
   const order = orderRes.rows[0]
 
@@ -136,9 +137,10 @@ ordersRouter.post('/', async (req, res) => {
 })
 
 ordersRouter.put('/:id', async (req, res) => {
-  const { client_id, client_name: bodyClientName, address, date, status, sale_price, notes, items } = req.body as {
+  const { client_id, client_name: bodyClientName, address, date, status, sale_price, base_sale_price, price_adjustment_pct, notes, items } = req.body as {
     client_id?: string; client_name?: string; address?: string; date?: string; status?: string;
-    sale_price?: number; notes?: string; items?: { flavor_id: string; quantity: number }[]
+    sale_price?: number; base_sale_price?: number | null; price_adjustment_pct?: number | null;
+    notes?: string; items?: { flavor_id: string; quantity: number }[]
   }
 
   let resolvedClientName: string | null = bodyClientName ?? null
@@ -151,18 +153,23 @@ ordersRouter.put('/:id', async (req, res) => {
     resolvedClientName = clientRes.rows[0].name
   }
 
+  const hasBase = Object.prototype.hasOwnProperty.call(req.body, 'base_sale_price')
+  const hasPct = Object.prototype.hasOwnProperty.call(req.body, 'price_adjustment_pct')
+
   const orderRes = await query<{ id: string }>(
     `UPDATE orders SET
-       client_name = COALESCE($1, client_name),
-       client_id   = COALESCE($2, client_id),
-       address     = COALESCE($3, address),
-       date        = COALESCE($4, date),
-       status      = COALESCE($5, status),
-       sale_price  = COALESCE($6, sale_price),
-       notes       = COALESCE($7, notes),
-       updated_at  = now()
-     WHERE id = $8 RETURNING id`,
-    [resolvedClientName, client_id ?? null, address ?? null, date ?? null, status ?? null, sale_price ?? null, notes ?? null, req.params.id]
+       client_name          = COALESCE($1, client_name),
+       client_id            = COALESCE($2, client_id),
+       address              = COALESCE($3, address),
+       date                 = COALESCE($4, date),
+       status               = COALESCE($5, status),
+       sale_price           = COALESCE($6, sale_price),
+       base_sale_price      = CASE WHEN $7::boolean THEN $8::numeric ELSE base_sale_price END,
+       price_adjustment_pct = CASE WHEN $9::boolean THEN $10::numeric ELSE price_adjustment_pct END,
+       notes                = COALESCE($11, notes),
+       updated_at           = now()
+     WHERE id = $12 RETURNING id`,
+    [resolvedClientName, client_id ?? null, address ?? null, date ?? null, status ?? null, sale_price ?? null, hasBase, base_sale_price ?? null, hasPct, price_adjustment_pct ?? null, notes ?? null, req.params.id]
   )
   if (!orderRes.rows.length) {
     res.status(404).json({ error: 'Order not found' })
