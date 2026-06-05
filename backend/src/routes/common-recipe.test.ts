@@ -3,7 +3,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import { query } from '../db/client'
 
-vi.mock('../db/client', () => ({ query: vi.fn() }))
+vi.mock('../db/client', () => {
+  const query = vi.fn()
+  return {
+    query,
+    withTransaction: (fn: (q: typeof query) => unknown) => fn(query),
+  }
+})
 vi.mock('../middleware/auth', () => ({ requireAuth: (_req: unknown, _res: unknown, next: () => void) => next() }))
 vi.mock('passport-google-oauth20', () => ({
   Strategy: class {

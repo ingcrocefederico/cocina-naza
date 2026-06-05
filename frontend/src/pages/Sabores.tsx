@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   useFlavors, useCreateFlavor, useUpdateFlavor, useDeleteFlavor,
   useFlavorRecipe, useSaveFlavorRecipe,
@@ -71,39 +71,52 @@ export default function Sabores() {
   const [recipeOpen, setRecipeOpen] = useState(false)
   const { data: recipe = [] } = useFlavorRecipe(recipeFlavorId)
 
-  const { data: existingRecipe } = useFlavorRecipe(editing?.id ?? null)
+  const { data: existingRecipe, isFetching: recipeFetching } = useFlavorRecipe(editing?.id ?? null)
 
+  // Populate the editor from the server recipe ONCE per dialog-open. Keyed on the
+  // open transition + flavor id (not on existingRecipe identity): React Query
+  // returns the same cached array reference when reopening the same flavor, so a
+  // plain [existingRecipe] dependency would not re-run and the lists would show
+  // empty even though the data is loaded. Guarding by key also prevents a
+  // background refetch from clobbering the user's in-progress edits.
+  const populatedKeyRef = useRef<string | null>(null)
   useEffect(() => {
-    if (existingRecipe) {
-      setCommonItems(
-        existingRecipe
-          .filter((r: RecipeItem) => r.is_common)
-          .map((r: RecipeItem) => ({
-            ingredient_id: r.ingredient_id,
-            ingredient_name: r.ingredient_name,
-            unit: r.unit,
-            quantity_per_budin: r.quantity_per_budin,
-            override_quantity: r.is_overridden ? String(Math.round(Number(r.quantity_per_budin))) : '',
-            is_overridden: r.is_overridden,
-            is_deleted: r.is_deleted,
-          }))
-      )
-      setRows(
-        existingRecipe
-          .filter((r: RecipeItem) => !r.is_common)
-          .map((r: RecipeItem) => ({
-            key: rowKey++,
-            ingredient_id: r.ingredient_id,
-            quantity_per_budin: String(Math.round(Number(r.quantity_per_budin))),
-          }))
-      )
+    if (!open || !editing) {
+      populatedKeyRef.current = null
+      return
     }
-  }, [existingRecipe])
+    if (!existingRecipe) return
+    if (populatedKeyRef.current === editing.id) return
+    populatedKeyRef.current = editing.id
+    setCommonItems(
+      existingRecipe
+        .filter((r: RecipeItem) => r.is_common)
+        .map((r: RecipeItem) => ({
+          ingredient_id: r.ingredient_id,
+          ingredient_name: r.ingredient_name,
+          unit: r.unit,
+          quantity_per_budin: r.quantity_per_budin,
+          override_quantity: r.is_overridden ? String(Math.round(Number(r.quantity_per_budin))) : '',
+          is_overridden: r.is_overridden,
+          is_deleted: r.is_deleted,
+        }))
+    )
+    setRows(
+      existingRecipe
+        .filter((r: RecipeItem) => !r.is_common)
+        .map((r: RecipeItem) => ({
+          key: rowKey++,
+          ingredient_id: r.ingredient_id,
+          quantity_per_budin: String(Math.round(Number(r.quantity_per_budin))),
+        }))
+    )
+  }, [open, editing, existingRecipe])
 
   function openCreate() {
     setEditing(null)
     setForm(emptyForm)
     setRows([])
+    setCommonItems([])
     setOpen(true)
   }
 
@@ -111,6 +124,7 @@ export default function Sabores() {
     setEditing(flavor)
     setForm({ name: flavor.name, emoji: flavor.emoji, price_per_budin: flavor.price_per_budin })
     setRows([])
+    setCommonItems([])
     setOpen(true)
   }
 
@@ -498,7 +512,13 @@ export default function Sabores() {
                 </Button>
               </div>
 
-              {rows.length === 0 && (
+              {rows.length === 0 && editing && recipeFetching && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Cargando ingredientes…
+                </p>
+              )}
+
+              {rows.length === 0 && !(editing && recipeFetching) && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Sin ingredientes. Agregá uno con el botón.
                 </p>

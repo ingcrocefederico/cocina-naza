@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { query } from '../db/client'
+import { query, withTransaction } from '../db/client'
 import { requireAuth } from '../middleware/auth'
 import type { Flavor } from '../types'
 
@@ -182,16 +182,29 @@ flavorsRouter.get('/:id/recipe', async (req, res) => {
 })
 
 flavorsRouter.put('/:id/recipe', async (req, res) => {
-  const items = req.body as { ingredient_id: string; quantity_per_budin: number }[]
-  await query('DELETE FROM recipe_items WHERE flavor_id = $1', [req.params.id])
-  if (items.length > 0) {
-    const values = items.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
-    const params = items.flatMap(item => [req.params.id, item.ingredient_id, item.quantity_per_budin])
-    await query(
-      `INSERT INTO recipe_items (flavor_id, ingredient_id, quantity_per_budin) VALUES ${values}`,
-      params
-    )
-  }
+  const rawItems = req.body as { ingredient_id: string; quantity_per_budin: number }[]
+
+  // Dedupe by ingredient_id (last wins). The same ingredient can arrive twice
+  // (e.g. as a common override AND as a propio row), which would violate the
+  // recipe_items (flavor_id, ingredient_id) unique constraint and abort the
+  // INSERT — wiping the recipe if it weren't transactional.
+  const byIngredient = new Map<string, { ingredient_id: string; quantity_per_budin: number }>()
+  for (const item of rawItems) byIngredient.set(item.ingredient_id, item)
+  const items = [...byIngredient.values()]
+
+  // DELETE + INSERT in one transaction so a failed INSERT can never leave the
+  // flavor with zero recipe_items.
+  await withTransaction(async (q) => {
+    await q('DELETE FROM recipe_items WHERE flavor_id = $1', [req.params.id])
+    if (items.length > 0) {
+      const values = items.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
+      const params = items.flatMap(item => [req.params.id, item.ingredient_id, item.quantity_per_budin])
+      await q(
+        `INSERT INTO recipe_items (flavor_id, ingredient_id, quantity_per_budin) VALUES ${values}`,
+        params
+      )
+    }
+  })
   const result = await query(
     `SELECT ri.id, ri.ingredient_id, i.name AS ingredient_name, i.unit, ROUND(ri.quantity_per_budin)::integer AS quantity_per_budin, i.price_per_unit
      FROM recipe_items ri

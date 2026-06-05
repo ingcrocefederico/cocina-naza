@@ -7,7 +7,10 @@ import jwt from 'jsonwebtoken'
 process.env.JWT_SECRET = 'test-secret'
 
 const { mockQuery } = vi.hoisted(() => ({ mockQuery: vi.fn() }))
-vi.mock('../db/client', () => ({ query: mockQuery }))
+vi.mock('../db/client', () => ({
+  query: mockQuery,
+  withTransaction: (fn: (q: typeof mockQuery) => unknown) => fn(mockQuery),
+}))
 
 import { ordersRouter } from './orders'
 

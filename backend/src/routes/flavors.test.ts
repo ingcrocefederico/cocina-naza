@@ -7,7 +7,12 @@ import jwt from 'jsonwebtoken'
 process.env.JWT_SECRET = 'test-secret'
 
 const { mockQuery } = vi.hoisted(() => ({ mockQuery: vi.fn() }))
-vi.mock('../db/client', () => ({ query: mockQuery }))
+vi.mock('../db/client', () => ({
+  query: mockQuery,
+  // Run the transactional callback against the same mocked query so tests can
+  // assert the DELETE/INSERT statements issued inside the transaction.
+  withTransaction: (fn: (q: typeof mockQuery) => unknown) => fn(mockQuery),
+}))
 
 import { flavorsRouter } from './flavors'
 
@@ -305,6 +310,62 @@ describe('GET /api/flavors/:id/recipe — integral + is_deleted', () => {
     expect(manteca.is_deleted).toBe(true)
     expect(manteca.is_common).toBe(true)
     expect(manteca.is_overridden).toBe(false)
+  })
+})
+
+describe('PUT /api/flavors/:id/recipe', () => {
+  beforeEach(() => mockQuery.mockReset())
+
+  function insertCallParams() {
+    const call = mockQuery.mock.calls.find(c => String(c[0]).includes('INSERT INTO recipe_items'))
+    return call ? (call[1] as unknown[]) : null
+  }
+
+  it('saves recipe items (DELETE then INSERT then SELECT)', async () => {
+    mockQuery.mockResolvedValue({ rows: [] })
+    const res = await request(makeApp())
+      .put('/api/flavors/f-1/recipe')
+      .set('Cookie', authCookie())
+      .send([
+        { ingredient_id: 'azucar-imp', quantity_per_budin: 100 },
+        { ingredient_id: 'esencia', quantity_per_budin: 5 },
+      ])
+    expect(res.status).toBe(200)
+    const statements = mockQuery.mock.calls.map(c => String(c[0]))
+    expect(statements.some(s => s.includes('DELETE FROM recipe_items'))).toBe(true)
+    expect(statements.some(s => s.includes('INSERT INTO recipe_items'))).toBe(true)
+  })
+
+  it('dedupes duplicate ingredient_ids so the INSERT cannot violate the unique constraint', async () => {
+    // Reproduces the data-loss bug: Manteca sent twice (e.g. as common override
+    // AND as a propio). Before the fix the INSERT had two rows with the same
+    // (flavor_id, ingredient_id) → unique violation → INSERT aborts after the
+    // DELETE already wiped everything. The handler must dedupe to one row.
+    mockQuery.mockResolvedValue({ rows: [] })
+    const res = await request(makeApp())
+      .put('/api/flavors/f-1/recipe')
+      .set('Cookie', authCookie())
+      .send([
+        { ingredient_id: 'manteca', quantity_per_budin: 70 },
+        { ingredient_id: 'manteca', quantity_per_budin: 70 },
+        { ingredient_id: 'azucar-imp', quantity_per_budin: 100 },
+      ])
+    expect(res.status).toBe(200)
+    const params = insertCallParams()
+    expect(params).not.toBeNull()
+    expect(params!.filter(p => p === 'manteca')).toHaveLength(1)
+    expect(params!.filter(p => p === 'azucar-imp')).toHaveLength(1)
+  })
+
+  it('does not INSERT when all items are removed (empty body)', async () => {
+    mockQuery.mockResolvedValue({ rows: [] })
+    const res = await request(makeApp())
+      .put('/api/flavors/f-1/recipe')
+      .set('Cookie', authCookie())
+      .send([])
+    expect(res.status).toBe(200)
+    expect(insertCallParams()).toBeNull()
+    expect(mockQuery.mock.calls.some(c => String(c[0]).includes('DELETE FROM recipe_items'))).toBe(true)
   })
 })
 

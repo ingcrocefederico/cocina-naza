@@ -3,3 +3,6 @@ dist/
 .env
 *.local
 .DS_Store
+
+# DB backups (contienen datos)
+backups/

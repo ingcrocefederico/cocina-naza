@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { query } from '../db/client'
+import { query, withTransaction } from '../db/client'
 import { requireAuth } from '../middleware/auth'
 import type { Order, OrderWithItems } from '../types'
 
@@ -177,12 +177,16 @@ ordersRouter.put('/:id', async (req, res) => {
   }
 
   if (Array.isArray(items)) {
-    await query('DELETE FROM order_items WHERE order_id = $1', [req.params.id])
-    if (items.length > 0) {
-      const values = items.map((_: unknown, i: number) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
-      const params = items.flatMap((item) => [req.params.id, item.flavor_id, item.quantity])
-      await query(`INSERT INTO order_items (order_id, flavor_id, quantity) VALUES ${values}`, params)
-    }
+    // DELETE + INSERT in one transaction so a failed INSERT can never leave the
+    // order with zero items.
+    await withTransaction(async (q) => {
+      await q('DELETE FROM order_items WHERE order_id = $1', [req.params.id])
+      if (items.length > 0) {
+        const values = items.map((_: unknown, i: number) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
+        const params = items.flatMap((item) => [req.params.id, item.flavor_id, item.quantity])
+        await q(`INSERT INTO order_items (order_id, flavor_id, quantity) VALUES ${values}`, params)
+      }
+    })
   }
 
   const result = await fetchOrderWithItems(req.params.id)

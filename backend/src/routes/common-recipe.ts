@@ -1,6 +1,6 @@
 // backend/src/routes/common-recipe.ts
 import { Router } from 'express'
-import { query } from '../db/client'
+import { query, withTransaction } from '../db/client'
 import { requireAuth } from '../middleware/auth'
 import type { CommonRecipeItem } from '../types'
 
@@ -32,15 +32,26 @@ commonRecipeRouter.put('/', async (req, res) => {
     res.status(400).json({ error: 'applies_to must be "all" or "integral"' })
     return
   }
-  await query('DELETE FROM common_recipe_items')
-  if (items.length > 0) {
-    const values = items.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
-    const params = items.flatMap(item => [item.ingredient_id, item.quantity_per_budin, item.applies_to])
-    await query(
-      `INSERT INTO common_recipe_items (ingredient_id, quantity_per_budin, applies_to) VALUES ${values}`,
-      params
-    )
-  }
+
+  // Dedupe by (ingredient_id, applies_to) — the table's unique constraint would
+  // otherwise abort the INSERT after the DELETE already wiped the whole table.
+  const byKey = new Map<string, { ingredient_id: string; quantity_per_budin: number; applies_to: string }>()
+  for (const item of items) byKey.set(`${item.ingredient_id}|${item.applies_to}`, item)
+  const deduped = [...byKey.values()]
+
+  // DELETE + INSERT in one transaction so a failed INSERT can never leave the
+  // common recipe empty.
+  await withTransaction(async (q) => {
+    await q('DELETE FROM common_recipe_items')
+    if (deduped.length > 0) {
+      const values = deduped.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')
+      const params = deduped.flatMap(item => [item.ingredient_id, item.quantity_per_budin, item.applies_to])
+      await q(
+        `INSERT INTO common_recipe_items (ingredient_id, quantity_per_budin, applies_to) VALUES ${values}`,
+        params
+      )
+    }
+  })
   const result = await query<CommonRecipeItem>(SELECT_COMMON)
   res.json(result.rows)
 })
