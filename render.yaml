@@ -1,0 +1,30 @@
+# Render Blueprint — un solo Web Service full-stack.
+# El backend Express sirve la API y, en producción, también el frontend ya
+# compilado (ver backend/src/app.ts: express.static + fallback SPA). Por eso un
+# único servicio alcanza para todo. La base de datos es Neon (externa) y entra
+# por DATABASE_URL.
+services:
+  - type: web
+    name: cocina-naza
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    # --include=dev: con NODE_ENV=production npm omitiría las devDependencies
+    # (vite, typescript, tsc) que el build necesita.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: node backend/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true        # Render genera un secreto aleatorio fuerte
+      - key: DATABASE_URL
+        sync: false                # pegar la connection string de Neon
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false                # https://<tu-servicio>.onrender.com/api/auth/google/callback
